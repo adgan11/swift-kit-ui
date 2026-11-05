@@ -1,0 +1,50 @@
+{
+  "$schema": "https://theswiftk.it.com/ui/schema/registry-item.json",
+  "name": "sk-icon-bubble",
+  "type": "registry:component",
+  "title": "Icon Bubble",
+  "description": "A tinted container for an SF Symbol. The thing every settings row, feature list and empty state reinvents slightly differently.",
+  "author": "Ahmed Gagan",
+  "tier": "free",
+  "platforms": {
+    "iOS": "17.0",
+    "macOS": "14.0"
+  },
+  "categories": [
+    "decoration"
+  ],
+  "dependencies": [],
+  "registryDependencies": [
+    "foundation"
+  ],
+  "files": [
+    {
+      "path": "Sources/SwiftKitUI/Components/SKIconBubble.swift",
+      "target": "SwiftKitUI/SKIconBubble.swift",
+      "type": "registry:component",
+      "lines": 104,
+      "content": "//\n//  SKIconBubble.swift\n//  Swift Kit UI\n//\n//  Requires: SwiftKitUI.swift\n//\n//  A tinted container for an SF Symbol. The thing every settings row, feature\n//  list and empty state reinvents slightly differently.\n//\n//  Usage:\n//      SKIconBubble(\"star.fill\")\n//      SKIconBubble(\"trash.fill\", tone: .danger)\n//      SKIconBubble(\"bolt.fill\", tone: .accent, shape: .circle, size: SK.Icon.xl)\n//\n\nimport SwiftUI\n\npublic struct SKIconBubble: View {\n    public enum Tone: Sendable {\n        case neutral, accent, success, warning, danger\n\n        var foreground: Color {\n            switch self {\n            case .neutral: SK.Palette.labelSecondary\n            case .accent: SK.Palette.accent\n            case .success: SK.Palette.success\n            case .warning: SK.Palette.warning\n            case .danger: SK.Palette.danger\n            }\n        }\n\n        var background: Color {\n            switch self {\n            case .neutral: SK.Palette.fill\n            case .accent: SK.Palette.accentSoft\n            case .success: SK.Palette.successSoft\n            case .warning: SK.Palette.warningSoft\n            case .danger: SK.Palette.dangerSoft\n            }\n        }\n    }\n\n    public enum Shape_: Sendable { case rounded, circle }\n\n    private let systemImage: String\n    private let tone: Tone\n    private let shape: Shape_\n    private let size: CGFloat\n\n    public init(\n        _ systemImage: String,\n        tone: Tone = .accent,\n        shape: Shape_ = .rounded,\n        size: CGFloat = SK.Icon.md\n    ) {\n        self.systemImage = systemImage\n        self.tone = tone\n        self.shape = shape\n        self.size = size\n    }\n\n    /// The container scales with the glyph so bubbles stay optically balanced\n    /// at any size instead of needing a second hard-coded number.\n    private var box: CGFloat { size * 2.1 }\n\n    public var body: some View {\n        Image(systemName: systemImage)\n            .font(SK.Icon.symbol(size))\n            .foregroundStyle(tone.foreground)\n            .frame(width: box, height: box)\n            .background {\n                switch shape {\n                case .rounded:\n                    RoundedRectangle(cornerRadius: box * 0.28, style: .continuous)\n                        .fill(tone.background)\n                case .circle:\n                    Circle().fill(tone.background)\n                }\n            }\n            .accessibilityHidden(true)\n    }\n}\n\n#Preview(\"SKIconBubble\") {\n    VStack(spacing: SK.Space.xl) {\n        HStack(spacing: SK.Space.md) {\n            SKIconBubble(\"star.fill\")\n            SKIconBubble(\"checkmark\", tone: .success)\n            SKIconBubble(\"exclamationmark.triangle.fill\", tone: .warning)\n            SKIconBubble(\"trash.fill\", tone: .danger)\n            SKIconBubble(\"gear\", tone: .neutral)\n        }\n        HStack(spacing: SK.Space.md) {\n            SKIconBubble(\"bolt.fill\", shape: .circle, size: SK.Icon.sm)\n            SKIconBubble(\"bolt.fill\", shape: .circle, size: SK.Icon.md)\n            SKIconBubble(\"bolt.fill\", shape: .circle, size: SK.Icon.lg)\n            SKIconBubble(\"bolt.fill\", shape: .circle, size: SK.Icon.xl)\n        }\n    }\n    .padding(SK.Space.xl)\n    .frame(maxWidth: .infinity, maxHeight: .infinity)\n    .background(SK.Palette.surfaceSunken)\n}\n"
+    }
+  ],
+  "variants": [
+    {
+      "id": "rounded",
+      "title": "Rounded",
+      "tier": "free"
+    },
+    {
+      "id": "circle",
+      "title": "Circle",
+      "tier": "free"
+    }
+  ],
+  "usage": "SKIconBubble(\"star.fill\")\nSKIconBubble(\"trash.fill\", tone: .danger)\nSKIconBubble(\"bolt.fill\", tone: .accent, shape: .circle, size: SK.Icon.xl)",
+  "docs": "https://theswiftk.it.com/swiftui/icon-bubble",
+  "keywords": [
+    "swiftui icon background",
+    "ios icon bubble"
+  ],
+  "meta": {
+    "searchVolume": 70
+  }
+}

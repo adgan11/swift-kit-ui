@@ -1,0 +1,46 @@
+{
+  "$schema": "https://theswiftk.it.com/ui/schema/registry-item.json",
+  "name": "sk-pull-to-refresh",
+  "type": "registry:component",
+  "title": "Pull To Refresh",
+  "description": "A pull-to-refresh indicator you can brand, unlike `.refreshable`'s fixed system spinner.",
+  "author": "Ahmed Gagan",
+  "tier": "free",
+  "platforms": {
+    "iOS": "17.0",
+    "macOS": "14.0"
+  },
+  "categories": [
+    "interaction"
+  ],
+  "dependencies": [],
+  "registryDependencies": [
+    "foundation"
+  ],
+  "files": [
+    {
+      "path": "Sources/SwiftKitUI/Components/SKPullToRefresh.swift",
+      "target": "SwiftKitUI/SKPullToRefresh.swift",
+      "type": "registry:component",
+      "lines": 177,
+      "content": "//\n//  SKPullToRefresh.swift\n//  Swift Kit UI\n//\n//  Requires: SwiftKitUI.swift\n//  Requires iOS 18 / macOS 15 \u2014 see the note below. Every other component in\n//  the kit is iOS 17.\n//\n//  Pull-to-refresh you can brand, unlike `.refreshable`'s fixed system spinner.\n//  The arc fills in proportion to the pull and ticks once at the threshold, so\n//  the commit point is felt rather than watched.\n//\n//  WHY iOS 18, AND WHY NOT A GeometryReader\n//  ----------------------------------------\n//  The classic trick \u2014 a `GeometryReader` in the scroll content publishing its\n//  `minY` through a `PreferenceKey` \u2014 DOES NOT WORK under the modern scroll\n//  system. Instrumented on iOS 26.2 with a counter: through a full drag and a\n//  swipe, with the list demonstrably scrolling, the preference fired exactly\n//  ONCE, at first layout. A GeometryReader is not re-evaluated for pure\n//  translation, only for size changes. Named and `.global` coordinate spaces\n//  both behave the same way.\n//\n//  `onScrollGeometryChange` is the API that actually reports offset, and it is\n//  iOS 18+. Rather than ship a component that silently does nothing, this one\n//  carries a higher floor and says so.\n//\n//  WHY IT OWNS THE ScrollView\n//  --------------------------\n//  Reading a scroll view's geometry requires being the scroll view. A modifier\n//  applied to content already inside one cannot reach it.\n//\n//  Usage:\n//      SKRefreshableScrollView {\n//          await reload()\n//      } content: {\n//          ForEach(items) { ... }\n//      }\n//\n\nimport SwiftUI\n\n@available(iOS 18.0, macOS 15.0, *)\npublic struct SKRefreshableScrollView<Content: View>: View {\n    private let threshold: CGFloat\n    private let showsIndicators: Bool\n    private let action: () async -> Void\n    private let content: Content\n\n    @State private var pull: CGFloat = 0\n    @State private var isRefreshing = false\n    /// Set once the pull passes the threshold; the refresh fires when the pull\n    /// then collapses, which is the release.\n    @State private var armed = false\n    @State private var spin = false\n\n    @Environment(\\.accessibilityReduceMotion) private var reduceMotion\n\n    public init(\n        threshold: CGFloat = 72,\n        showsIndicators: Bool = false,\n        action: @escaping () async -> Void,\n        @ViewBuilder content: () -> Content\n    ) {\n        self.threshold = threshold\n        self.showsIndicators = showsIndicators\n        self.action = action\n        self.content = content()\n    }\n\n    private var progress: CGFloat { min(max(pull / threshold, 0), 1) }\n\n    public var body: some View {\n        ScrollView(.vertical, showsIndicators: showsIndicators) {\n            content\n                // Holds the content down while refreshing so the spinner has\n                // somewhere to sit instead of overlapping the first row.\n                .padding(.top, isRefreshing ? threshold : 0)\n        }\n        // A list shorter than the viewport would otherwise never bounce, and an\n        // empty list is exactly when people pull hardest.\n        .scrollBounceBehavior(.always, axes: .vertical)\n        .onScrollGeometryChange(for: CGFloat.self) { geometry in\n            // Distance overscrolled past the top. Positive while pulling down.\n            -(geometry.contentOffset.y + geometry.contentInsets.top)\n        } action: { _, distance in\n            handle(distance)\n        }\n        .overlay(alignment: .top) { indicator }\n        .skAnimation(.settle, value: isRefreshing)\n    }\n\n    @ViewBuilder\n    private var indicator: some View {\n        Group {\n            if isRefreshing {\n                Circle()\n                    .trim(from: 0, to: 0.26)\n                    .stroke(SK.Palette.accent, style: StrokeStyle(lineWidth: 3, lineCap: .round))\n                    .rotationEffect(.degrees(spin ? 360 : 0))\n                    .onAppear {\n                        guard !reduceMotion else { return }\n                        withAnimation(.linear(duration: 0.85).repeatForever(autoreverses: false)) {\n                            spin = true\n                        }\n                    }\n                    .onDisappear { spin = false }\n            } else if progress > 0.02 {\n                Circle()\n                    .trim(from: 0, to: progress)\n                    .stroke(SK.Palette.accent, style: StrokeStyle(lineWidth: 3, lineCap: .round))\n                    .rotationEffect(.degrees(-90))\n                    .scaleEffect(0.55 + progress * 0.45)\n                    .opacity(Double(progress))\n            }\n        }\n        .frame(width: 26, height: 26)\n        // Rides down with the finger, then parks at the threshold.\n        .offset(y: (isRefreshing ? threshold : min(pull, threshold)) / 2 - 13)\n        .accessibilityHidden(true)\n    }\n\n    private func handle(_ distance: CGFloat) {\n        guard !isRefreshing else { return }\n        pull = max(0, distance)\n\n        if pull >= threshold, !armed {\n            armed = true\n            SK.Haptic.play(.medium)\n        }\n        // Armed, then collapsing: the finger let go.\n        if armed, pull < threshold * 0.55 {\n            armed = false\n            start()\n        }\n    }\n\n    private func start() {\n        guard !isRefreshing else { return }\n        withAnimation(SKMotion.settle.resolved(reduceMotion: reduceMotion)) {\n            isRefreshing = true\n        }\n        Task { @MainActor in\n            await action()\n            withAnimation(SKMotion.settle.resolved(reduceMotion: reduceMotion)) {\n                isRefreshing = false\n                pull = 0\n            }\n        }\n    }\n}\n\n@available(iOS 18.0, macOS 15.0, *)\n#Preview(\"SKPullToRefresh\") {\n    @Previewable @State var items = Array(1...14)\n\n    SKRefreshableScrollView {\n        try? await Task.sleep(for: .seconds(1.2))\n        items = items.map { $0 + 14 }\n    } content: {\n        VStack(spacing: SK.Space.sm) {\n            Text(\"Pull down to refresh\")\n                .font(SK.Type_.caption)\n                .foregroundStyle(SK.Palette.labelTertiary)\n            ForEach(items, id: \\.self) { i in\n                Text(\"Item \\(i)\")\n                    .font(SK.Type_.body)\n                    .foregroundStyle(SK.Palette.label)\n                    .frame(maxWidth: .infinity, alignment: .leading)\n                    .padding(SK.Space.md)\n                    .skSurface(.bordered, radius: SK.Radius.md)\n            }\n        }\n        .padding(SK.Space.lg)\n    }\n    .background(SK.Palette.surfaceSunken)\n}\n"
+    }
+  ],
+  "variants": [
+    {
+      "id": "default",
+      "title": "Default",
+      "tier": "free"
+    }
+  ],
+  "usage": "ScrollView { ... }.skPullToRefresh { await reload() }",
+  "docs": "https://theswiftk.it.com/swiftui/pull-to-refresh",
+  "keywords": [
+    "swiftui pull to refresh",
+    "ios pull to refresh",
+    "swiftui refreshable"
+  ],
+  "meta": {
+    "searchVolume": 90
+  }
+}

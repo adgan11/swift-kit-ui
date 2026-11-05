@@ -1,0 +1,51 @@
+{
+  "$schema": "https://theswiftk.it.com/ui/schema/registry-item.json",
+  "name": "sk-alert",
+  "type": "registry:component",
+  "title": "Alert",
+  "description": "A styled alert that can carry a text field \u2014 the thing the system alert technically supports but gives you no control over.",
+  "author": "Ahmed Gagan",
+  "tier": "free",
+  "platforms": {
+    "iOS": "17.0",
+    "macOS": "14.0"
+  },
+  "categories": [
+    "overlays"
+  ],
+  "dependencies": [],
+  "registryDependencies": [
+    "foundation"
+  ],
+  "files": [
+    {
+      "path": "Sources/SwiftKitUI/Components/SKAlert.swift",
+      "target": "SwiftKitUI/SKAlert.swift",
+      "type": "registry:component",
+      "lines": 232,
+      "content": "//\n//  SKAlert.swift\n//  Swift Kit UI\n//\n//  Requires: SwiftKitUI.swift\n//\n//  A styled alert that can carry a text field \u2014 the thing the system alert\n//  technically supports but gives you no control over.\n//\n//  Presented as an overlay rather than a `.sheet`, so it can be branded and so\n//  the backdrop dims the actual app instead of the system's flat scrim.\n//\n//  Usage:\n//      .skAlert(isPresented: $show, title: \"Delete?\",\n//               message: \"This cannot be undone.\",\n//               confirm: .init(title: \"Delete\", role: .destructive) { delete() })\n//\n//      .skAlert(isPresented: $rename, title: \"Rename\",\n//               text: $name, placeholder: \"New name\",\n//               confirm: .init(title: \"Save\") { save(name) })\n//\n\nimport SwiftUI\n\npublic struct SKAlertAction {\n    public enum Role: Sendable { case normal, destructive }\n\n    public let title: String\n    public let role: Role\n    public let handler: () -> Void\n\n    public init(title: String, role: Role = .normal, handler: @escaping () -> Void = {}) {\n        self.title = title\n        self.role = role\n        self.handler = handler\n    }\n}\n\nprivate struct SKAlertModifier: ViewModifier {\n    @Binding var isPresented: Bool\n    let title: String\n    let message: String?\n    let systemImage: String?\n    var text: Binding<String>?\n    let placeholder: String\n    let confirm: SKAlertAction\n    let cancelTitle: String?\n\n    @FocusState private var fieldFocused: Bool\n\n    func body(content: Content) -> some View {\n        content.overlay {\n            if isPresented {\n                ZStack {\n                    Color.black.opacity(0.38)\n                        .ignoresSafeArea()\n                        .transition(.opacity)\n                        .onTapGesture { dismiss() }\n\n                    card\n                        .transition(.opacity.combined(with: .scale(scale: 0.92)))\n                }\n                .skAnimation(.settle, value: isPresented)\n                .zIndex(10)\n            }\n        }\n        .skAnimation(.settle, value: isPresented)\n    }\n\n    private var card: some View {\n        VStack(spacing: SK.Space.lg) {\n            if let systemImage {\n                Image(systemName: systemImage)\n                    .font(SK.Icon.symbol(SK.Icon.xl))\n                    .foregroundStyle(confirm.role == .destructive ? SK.Palette.danger : SK.Palette.accent)\n            }\n\n            VStack(spacing: SK.Space.xs) {\n                Text(title)\n                    .font(SK.Type_.headline)\n                    .foregroundStyle(SK.Palette.label)\n                if let message {\n                    Text(message)\n                        .font(SK.Type_.callout)\n                        .foregroundStyle(SK.Palette.labelSecondary)\n                        .multilineTextAlignment(.center)\n                }\n            }\n\n            if let text {\n                TextField(placeholder, text: text)\n                    .font(SK.Type_.body)\n                    .padding(.horizontal, SK.Space.md)\n                    .frame(height: SK.Icon.hitTarget)\n                    .background(SK.Palette.fill, in: RoundedRectangle(cornerRadius: SK.Radius.sm, style: .continuous))\n                    .focused($fieldFocused)\n                    .submitLabel(.done)\n                    .onSubmit(run)\n            }\n\n            HStack(spacing: SK.Space.sm) {\n                if let cancelTitle {\n                    Button(cancelTitle) { dismiss() }\n                        .buttonStyle(SKButtonStyleShim.secondary)\n                }\n                Button(confirm.title, action: run)\n                    .buttonStyle(confirm.role == .destructive\n                                 ? SKButtonStyleShim.destructive\n                                 : SKButtonStyleShim.primary)\n            }\n        }\n        .padding(SK.Space.xl)\n        .frame(maxWidth: 320)\n        .skSurface(.elevated, radius: SK.Radius.xl)\n        .padding(SK.Space.xl)\n        // Focus the field after the entry animation, not during it \u2014 focusing\n        // mid-transition makes the keyboard race the alert on screen.\n        .task {\n            guard text != nil else { return }\n            try? await Task.sleep(for: .milliseconds(320))\n            fieldFocused = true\n        }\n    }\n\n    private func run() {\n        confirm.handler()\n        dismiss()\n    }\n\n    private func dismiss() {\n        fieldFocused = false\n        isPresented = false\n    }\n}\n\n/// Minimal local button styling.\n///\n/// SKAlert deliberately does NOT reuse SKButton: a component may depend only on\n/// the foundation, never on a sibling, or it stops being installable on its own.\nprivate struct SKButtonStyleShim: ButtonStyle {\n    enum Kind { case primary, secondary, destructive }\n    let kind: Kind\n\n    static let primary = SKButtonStyleShim(kind: .primary)\n    static let secondary = SKButtonStyleShim(kind: .secondary)\n    static let destructive = SKButtonStyleShim(kind: .destructive)\n\n    func makeBody(configuration: Configuration) -> some View {\n        configuration.label\n            .font(SK.Type_.headline)\n            .foregroundStyle(kind == .secondary ? SK.Palette.label : Color.white)\n            .frame(maxWidth: .infinity)\n            .padding(.vertical, SK.Space.md)\n            .background {\n                let shape = RoundedRectangle(cornerRadius: SK.Radius.md, style: .continuous)\n                switch kind {\n                case .primary: shape.fill(SK.Palette.accent)\n                case .destructive: shape.fill(SK.Palette.danger)\n                case .secondary: shape.fill(SK.Palette.fill)\n                }\n            }\n            .scaleEffect(configuration.isPressed ? 0.97 : 1)\n            .skAnimation(.micro, value: configuration.isPressed)\n    }\n}\n\nextension View {\n    /// Confirmation alert.\n    public func skAlert(\n        isPresented: Binding<Bool>,\n        title: String,\n        message: String? = nil,\n        systemImage: String? = nil,\n        confirm: SKAlertAction,\n        cancelTitle: String? = \"Cancel\"\n    ) -> some View {\n        modifier(SKAlertModifier(\n            isPresented: isPresented, title: title, message: message,\n            systemImage: systemImage, text: nil, placeholder: \"\",\n            confirm: confirm, cancelTitle: cancelTitle\n        ))\n    }\n\n    /// Alert with a text field.\n    public func skAlert(\n        isPresented: Binding<Bool>,\n        title: String,\n        message: String? = nil,\n        systemImage: String? = nil,\n        text: Binding<String>,\n        placeholder: String = \"\",\n        confirm: SKAlertAction,\n        cancelTitle: String? = \"Cancel\"\n    ) -> some View {\n        modifier(SKAlertModifier(\n            isPresented: isPresented, title: title, message: message,\n            systemImage: systemImage, text: text, placeholder: placeholder,\n            confirm: confirm, cancelTitle: cancelTitle\n        ))\n    }\n}\n\n#Preview(\"SKAlert\") {\n    @Previewable @State var confirmShown = false\n    @Previewable @State var renameShown = false\n    @Previewable @State var name = \"Untitled\"\n\n    VStack(spacing: SK.Space.md) {\n        Button(\"Destructive confirm\") { confirmShown = true }\n        Button(\"With a text field\") { renameShown = true }\n        Text(name).font(SK.Type_.caption).foregroundStyle(SK.Palette.labelSecondary)\n    }\n    .font(SK.Type_.callout)\n    .foregroundStyle(SK.Palette.accent)\n    .frame(maxWidth: .infinity, maxHeight: .infinity)\n    .background(SK.Palette.surfaceSunken)\n    .skAlert(\n        isPresented: $confirmShown,\n        title: \"Delete project?\",\n        message: \"This removes every file. It cannot be undone.\",\n        systemImage: \"trash.fill\",\n        confirm: .init(title: \"Delete\", role: .destructive)\n    )\n    .skAlert(\n        isPresented: $renameShown,\n        title: \"Rename\",\n        text: $name,\n        placeholder: \"Project name\",\n        confirm: .init(title: \"Save\")\n    )\n}\n"
+    }
+  ],
+  "variants": [
+    {
+      "id": "confirm",
+      "title": "Confirm",
+      "tier": "free"
+    },
+    {
+      "id": "text-field",
+      "title": "Text Field",
+      "tier": "free"
+    }
+  ],
+  "usage": ".skAlert(isPresented: $show, title: \"Delete?\",\nmessage: \"This cannot be undone.\",\nconfirm: .init(title: \"Delete\", role: .destructive) { delete() })\n.skAlert(isPresented: $rename, title: \"Rename\",\ntext: $name, placeholder: \"New name\",\nconfirm: .init(title: \"Save\") { save(name) })",
+  "docs": "https://theswiftk.it.com/swiftui/alert",
+  "keywords": [
+    "swiftui alert with textfield",
+    "swiftui custom alert",
+    "ios alert"
+  ],
+  "meta": {
+    "searchVolume": 1190
+  }
+}

@@ -1,0 +1,45 @@
+{
+  "$schema": "https://theswiftk.it.com/ui/schema/registry-item.json",
+  "name": "sk-confetti",
+  "type": "registry:component",
+  "title": "Confetti",
+  "description": "A celebration burst for purchases, streaks and completions.",
+  "author": "Ahmed Gagan",
+  "tier": "free",
+  "platforms": {
+    "iOS": "17.0",
+    "macOS": "14.0"
+  },
+  "categories": [
+    "delight"
+  ],
+  "dependencies": [],
+  "registryDependencies": [
+    "foundation"
+  ],
+  "files": [
+    {
+      "path": "Sources/SwiftKitUI/Components/SKConfetti.swift",
+      "target": "SwiftKitUI/SKConfetti.swift",
+      "type": "registry:component",
+      "lines": 190,
+      "content": "//\n//  SKConfetti.swift\n//  Swift Kit UI\n//\n//  Requires: SwiftKitUI.swift\n//\n//  A celebration burst for purchases, streaks and completions.\n//\n//  Three things separate confetti that looks good from confetti that looks\n//  cheap, and all three are here:\n//\n//  1. A CURATED palette. Random hues produce muddy olives and browns alongside\n//     the good colours, and the eye reads the worst one.\n//  2. FLUTTER. Real confetti is flat paper tumbling edge-on, so each piece\n//     squashes horizontally on a sine wave. Pieces that only translate and spin\n//     look like falling stickers.\n//  3. VARIED pieces \u2014 streamers, squares and discs at different sizes, each\n//     with its own spin and drift, so no two follow the same arc.\n//\n//  Drawn in a single `Canvas` rather than N views: 160 SwiftUI nodes being laid\n//  out per frame will stutter, 160 immediate-mode shapes will not.\n//\n//  lint:allow hard-coded-color \u2014 confetti needs its own vivid palette; the\n//  semantic tokens are tuned for legible UI, not for celebration.\n//\n//  Usage:\n//      .skConfetti(trigger: purchaseCount)\n//\n\nimport SwiftUI\n\nprivate struct SKConfettiPiece {\n    enum Shape_ { case strip, square, disc }\n\n    var x: Double            // 0\u20261 of width\n    var y: Double            // 0\u20261 of height\n    var vx: Double\n    var vy: Double\n    var spin: Double\n    var spinPhase: Double\n    var flutter: Double      // horizontal squash rate\n    var width: Double\n    var height: Double\n    var colorIndex: Int\n    var shape: Shape_\n}\n\nprivate struct SKConfettiModifier<T: Equatable>: ViewModifier {\n    let trigger: T\n    let intensity: Int\n\n    @State private var pieces: [SKConfettiPiece] = []\n    @State private var startedAt: Date?\n    @Environment(\\.accessibilityReduceMotion) private var reduceMotion\n\n    private let duration: Double = 3.0\n\n    /// Hand-picked so every piece lands somewhere pleasant.\n    private static var palette: [Color] {\n        [\n            Color(red: 0.48, green: 0.23, blue: 0.93),  // violet\n            Color(red: 0.95, green: 0.35, blue: 0.55),  // rose\n            Color(red: 1.00, green: 0.72, blue: 0.20),  // amber\n            Color(red: 0.18, green: 0.80, blue: 0.55),  // mint\n            Color(red: 0.25, green: 0.60, blue: 0.98),  // azure\n            Color(red: 1.00, green: 0.45, blue: 0.30),  // coral\n            Color(red: 0.62, green: 0.85, blue: 0.30),  // lime\n        ]\n    }\n\n    func body(content: Content) -> some View {\n        content\n            .overlay {\n                if startedAt != nil {\n                    TimelineView(.animation) { timeline in\n                        Canvas { context, size in\n                            draw(in: &context, size: size, now: timeline.date)\n                        }\n                        .allowsHitTesting(false)\n                    }\n                    .ignoresSafeArea()\n                }\n            }\n            .onChange(of: trigger) { _, _ in fire() }\n    }\n\n    private func fire() {\n        guard !reduceMotion else { return }\n        pieces = (0..<intensity).map { _ in\n            // A wide upward cone from just below the centre, so the burst\n            // rises, spreads, then falls back through the frame.\n            let angle = Double.random(in: (-.pi * 0.78)...(-.pi * 0.22))\n            let speed = Double.random(in: 0.95...1.85)\n            let shape: SKConfettiPiece.Shape_ = {\n                let r = Double.random(in: 0...1)\n                return r < 0.55 ? .strip : (r < 0.85 ? .square : .disc)\n            }()\n            let w = Double.random(in: 5...9)\n            return SKConfettiPiece(\n                x: Double.random(in: 0.35...0.65),\n                y: 0.62,\n                vx: cos(angle) * speed,\n                vy: sin(angle) * speed,\n                spin: Double.random(in: -7...7),\n                spinPhase: Double.random(in: 0...(.pi * 2)),\n                flutter: Double.random(in: 4...9),\n                width: w,\n                height: shape == .strip ? w * Double.random(in: 2.0...3.2) : w,\n                colorIndex: Int.random(in: 0..<Self.palette.count),\n                shape: shape\n            )\n        }\n        startedAt = Date()\n        SK.Haptic.play(.success)\n\n        Task { @MainActor in\n            try? await Task.sleep(for: .seconds(duration))\n            startedAt = nil\n            pieces = []\n        }\n    }\n\n    private func draw(in context: inout GraphicsContext, size: CGSize, now: Date) {\n        guard let startedAt else { return }\n        let t = now.timeIntervalSince(startedAt)\n        guard t < duration else { return }\n\n        let gravity = 1.65\n        let drag = 0.55                       // air resistance on horizontal drift\n        let colors = Self.palette\n        // Hold full opacity most of the way, then fade out at the end.\n        let fade = t < duration * 0.62 ? 1.0 : max(0, 1 - (t - duration * 0.62) / (duration * 0.38))\n\n        for piece in pieces {\n            let driftX = piece.vx * (1 - exp(-drag * t)) / drag\n            let px = (piece.x + driftX * 0.55) * size.width\n            let py = (piece.y + piece.vy * t + 0.5 * gravity * t * t) * size.height\n            guard py > -60, py < size.height + 60 else { continue }\n\n            // Flat paper tumbling edge-on: the piece narrows to nothing and\n            // opens out again. This is what sells it as confetti.\n            let flutter = cos(t * piece.flutter + piece.spinPhase)\n            let w = piece.width * max(0.15, abs(flutter))\n            let rect = CGRect(x: -w / 2, y: -piece.height / 2, width: w, height: piece.height)\n\n            var layer = context\n            layer.opacity = fade\n            layer.translateBy(x: px, y: py)\n            layer.rotate(by: .radians(piece.spinPhase + piece.spin * t))\n\n            let path: Path\n            switch piece.shape {\n            case .strip:  path = Path(roundedRect: rect, cornerRadius: 1)\n            case .square: path = Path(roundedRect: rect, cornerRadius: 1.5)\n            case .disc:   path = Path(ellipseIn: rect)\n            }\n            // Edge-on pieces read darker, like paper turning away from the light.\n            let shade = 0.72 + 0.28 * abs(flutter)\n            layer.fill(path, with: .color(colors[piece.colorIndex].opacity(shade)))\n        }\n    }\n}\n\nextension View {\n    /// Bursts confetti whenever `trigger` changes. No-op under Reduce Motion.\n    public func skConfetti<T: Equatable>(trigger: T, intensity: Int = 160) -> some View {\n        modifier(SKConfettiModifier(trigger: trigger, intensity: intensity))\n    }\n}\n\n#Preview(\"SKConfetti\") {\n    @Previewable @State var count = 0\n\n    VStack(spacing: SK.Space.xl) {\n        Image(systemName: \"party.popper.fill\")\n            .font(SK.Icon.symbol(56))\n            .foregroundStyle(SK.Palette.accent)\n        Button(\"Celebrate\") { count += 1 }\n            .font(SK.Type_.headline)\n            .foregroundStyle(.white)\n            .padding(.horizontal, SK.Space.xl)\n            .padding(.vertical, SK.Space.md)\n            .background(Capsule().fill(SK.Palette.accent))\n            .buttonStyle(.skPress)\n    }\n    .frame(maxWidth: .infinity, maxHeight: .infinity)\n    .background(SK.Palette.surfaceSunken)\n    .skConfetti(trigger: count)\n}\n"
+    }
+  ],
+  "variants": [
+    {
+      "id": "default",
+      "title": "Default",
+      "tier": "free"
+    }
+  ],
+  "usage": ".skConfetti(trigger: purchaseCount)",
+  "docs": "https://theswiftk.it.com/swiftui/confetti",
+  "keywords": [
+    "swiftui confetti",
+    "ios confetti animation"
+  ],
+  "meta": {
+    "searchVolume": 70
+  }
+}

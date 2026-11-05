@@ -1,0 +1,46 @@
+{
+  "$schema": "https://theswiftk.it.com/ui/schema/registry-item.json",
+  "name": "sk-rating",
+  "type": "registry:component",
+  "title": "Rating",
+  "description": "Star rating you can tap or drag across. Dragging is the part most implementations skip, and it is how people actually set a rating once they realise it works.",
+  "author": "Ahmed Gagan",
+  "tier": "free",
+  "platforms": {
+    "iOS": "17.0",
+    "macOS": "14.0"
+  },
+  "categories": [
+    "controls"
+  ],
+  "dependencies": [],
+  "registryDependencies": [
+    "foundation"
+  ],
+  "files": [
+    {
+      "path": "Sources/SwiftKitUI/Components/SKRating.swift",
+      "target": "SwiftKitUI/SKRating.swift",
+      "type": "registry:component",
+      "lines": 121,
+      "content": "//\n//  SKRating.swift\n//  Swift Kit UI\n//\n//  Requires: SwiftKitUI.swift\n//\n//  Star rating you can tap or drag across. Dragging is the part most\n//  implementations skip, and it is how people actually set a rating once they\n//  realise it works.\n//\n//  Usage:\n//      SKRating(value: $stars)                       // editable\n//      SKRating(value: .constant(4), isEditable: false)\n//\n\nimport SwiftUI\n\npublic struct SKRating: View {\n    @Binding private var value: Int\n    private let count: Int\n    private let isEditable: Bool\n    private let size: CGFloat\n    private let tint: Color\n\n    @State private var dragValue: Int?\n    @Environment(\\.accessibilityReduceMotion) private var reduceMotion\n\n    public init(\n        value: Binding<Int>,\n        count: Int = 5,\n        isEditable: Bool = true,\n        size: CGFloat = SK.Icon.lg,\n        tint: Color = SK.Palette.warning\n    ) {\n        self._value = value\n        self.count = count\n        self.isEditable = isEditable\n        self.size = size\n        self.tint = tint\n    }\n\n    private var shown: Int { dragValue ?? value }\n\n    public var body: some View {\n        HStack(spacing: SK.Space.xs) {\n            ForEach(1...count, id: \\.self) { index in\n                star(index)\n            }\n        }\n        .contentShape(.rect)\n        .gesture(isEditable ? drag : nil)\n        .accessibilityElement()\n        .accessibilityValue(Text(\"\\(value) of \\(count)\"))\n        .accessibilityAdjustableAction { direction in\n            guard isEditable else { return }\n            switch direction {\n            case .increment: if value < count { value += 1 }\n            case .decrement: if value > 0 { value -= 1 }\n            @unknown default: break\n            }\n        }\n    }\n\n    private func star(_ index: Int) -> some View {\n        let filled = index <= shown\n        return Image(systemName: filled ? \"star.fill\" : \"star\")\n            .font(SK.Icon.symbol(size, weight: .medium))\n            .foregroundStyle(filled ? tint : SK.Palette.separator)\n            // Only the star being set pops; popping all of them at once reads\n            // as a glitch rather than feedback.\n            .scaleEffect(filled && index == shown ? 1.18 : 1)\n            .frame(width: size * 1.6, height: SK.Icon.hitTarget)\n            .skAnimation(.pop, value: shown)\n            .onTapGesture {\n                guard isEditable else { return }\n                set(index)\n            }\n    }\n\n    private var drag: some Gesture {\n        DragGesture(minimumDistance: 0)\n            .onChanged { g in\n                let per = size * 1.6 + SK.Space.xs\n                let index = Int(g.location.x / per) + 1\n                let clamped = min(max(index, 1), count)\n                if clamped != dragValue {\n                    dragValue = clamped\n                    SK.Haptic.play(.light)\n                }\n            }\n            .onEnded { _ in\n                if let dragValue { value = dragValue }\n                dragValue = nil\n            }\n    }\n\n    private func set(_ index: Int) {\n        withAnimation(SKMotion.pop.resolved(reduceMotion: reduceMotion)) {\n            // Tapping the only filled star clears the rating, which is the\n            // conventional way to undo an accidental one-star.\n            value = (value == index && index == 1) ? 0 : index\n        }\n        SK.Haptic.play(.light)\n    }\n}\n\n#Preview(\"SKRating\") {\n    @Previewable @State var stars = 3\n\n    VStack(spacing: SK.Space.xl) {\n        SKRating(value: $stars)\n        SKRating(value: $stars, size: SK.Icon.xl, tint: SK.Palette.accent)\n        SKRating(value: .constant(4), isEditable: false, size: SK.Icon.sm)\n        Text(\"Drag across the stars\").font(SK.Type_.caption)\n            .foregroundStyle(SK.Palette.labelTertiary)\n    }\n    .padding(SK.Space.xl)\n    .frame(maxWidth: .infinity, maxHeight: .infinity)\n    .background(SK.Palette.surfaceSunken)\n}\n"
+    }
+  ],
+  "variants": [
+    {
+      "id": "stars",
+      "title": "Stars",
+      "tier": "free"
+    }
+  ],
+  "usage": "SKRating(value: $stars)                       // editable\nSKRating(value: .constant(4), isEditable: false)",
+  "docs": "https://theswiftk.it.com/swiftui/rating",
+  "keywords": [
+    "swiftui rating view",
+    "ios star rating",
+    "swiftui star rating"
+  ],
+  "meta": {
+    "searchVolume": 110
+  }
+}

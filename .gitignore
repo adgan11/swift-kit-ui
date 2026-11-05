@@ -1,0 +1,8 @@
+.build/
+.swiftpm/
+Gallery/.build/
+Gallery/shots/
+.DS_Store
+xcuserdata/
+*.xcuserstate
+__pycache__/

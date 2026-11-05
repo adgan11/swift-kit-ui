@@ -1,0 +1,51 @@
+{
+  "$schema": "https://theswiftk.it.com/ui/schema/registry-item.json",
+  "name": "sk-tooltip",
+  "type": "registry:component",
+  "title": "Tooltip",
+  "description": "A pointed bubble anchored to whatever it is explaining. For onboarding coach-marks and \"what does this do?\" hints.",
+  "author": "Ahmed Gagan",
+  "tier": "free",
+  "platforms": {
+    "iOS": "17.0",
+    "macOS": "14.0"
+  },
+  "categories": [
+    "feedback"
+  ],
+  "dependencies": [],
+  "registryDependencies": [
+    "foundation"
+  ],
+  "files": [
+    {
+      "path": "Sources/SwiftKitUI/Components/SKTooltip.swift",
+      "target": "SwiftKitUI/SKTooltip.swift",
+      "type": "registry:component",
+      "lines": 193,
+      "content": "//\n//  SKTooltip.swift\n//  Swift Kit UI\n//\n//  Requires: SwiftKitUI.swift\n//\n//  A pointed bubble anchored to whatever it is explaining. For onboarding\n//  coach-marks and \"what does this do?\" hints.\n//\n//  The arrow is part of the bubble's `Shape`, not a rotated square behind it.\n//  A rotated square shows a seam wherever the bubble is translucent and gets\n//  clipped wrong at the corners; one path has neither problem.\n//\n//  Usage:\n//      Button(\"?\") { show.toggle() }\n//          .skTooltip(isPresented: $show, edge: .top) { Text(\"Tap to refresh\") }\n//\n\nimport SwiftUI\n\npublic struct SKTooltipShape: Shape {\n    public var arrowEdge: Edge\n    public var cornerRadius: CGFloat = SK.Radius.md\n    public var arrowWidth: CGFloat = 16\n    public var arrowHeight: CGFloat = 8\n\n    public init(arrowEdge: Edge) { self.arrowEdge = arrowEdge }\n\n    public func path(in rect: CGRect) -> Path {\n        var body = rect\n        switch arrowEdge {\n        case .top: body.origin.y += arrowHeight; body.size.height -= arrowHeight\n        case .bottom: body.size.height -= arrowHeight\n        case .leading: body.origin.x += arrowHeight; body.size.width -= arrowHeight\n        case .trailing: body.size.width -= arrowHeight\n        }\n\n        var path = Path(roundedRect: body, cornerRadius: cornerRadius, style: .continuous)\n        var arrow = Path()\n        switch arrowEdge {\n        case .top:\n            let x = body.midX\n            arrow.move(to: CGPoint(x: x - arrowWidth / 2, y: body.minY))\n            arrow.addLine(to: CGPoint(x: x, y: rect.minY))\n            arrow.addLine(to: CGPoint(x: x + arrowWidth / 2, y: body.minY))\n        case .bottom:\n            let x = body.midX\n            arrow.move(to: CGPoint(x: x - arrowWidth / 2, y: body.maxY))\n            arrow.addLine(to: CGPoint(x: x, y: rect.maxY))\n            arrow.addLine(to: CGPoint(x: x + arrowWidth / 2, y: body.maxY))\n        case .leading:\n            let y = body.midY\n            arrow.move(to: CGPoint(x: body.minX, y: y - arrowWidth / 2))\n            arrow.addLine(to: CGPoint(x: rect.minX, y: y))\n            arrow.addLine(to: CGPoint(x: body.minX, y: y + arrowWidth / 2))\n        case .trailing:\n            let y = body.midY\n            arrow.move(to: CGPoint(x: body.maxX, y: y - arrowWidth / 2))\n            arrow.addLine(to: CGPoint(x: rect.maxX, y: y))\n            arrow.addLine(to: CGPoint(x: body.maxX, y: y + arrowWidth / 2))\n        }\n        arrow.closeSubpath()\n        path.addPath(arrow)\n        return path\n    }\n}\n\n/// Positioning maths, kept out of the generic modifier.\n///\n/// An `alignmentGuide` closure inside a type generic over the tip's View would\n/// capture `Tip.Type`, which Swift 6 flags as a non-Sendable capture in an\n/// isolated closure. Pulling the logic into a non-generic enum means the\n/// closure captures only an `Edge`.\nprivate enum SKTooltipGeometry {\n    static func overlayAlignment(for edge: Edge) -> Alignment {\n        switch edge {\n        case .top: .top          // arrow on top -> bubble sits ABOVE the anchor\n        case .bottom: .bottom\n        case .leading: .leading\n        case .trailing: .trailing\n        }\n    }\n\n    /// Pushes the bubble fully outside the anchor instead of overlapping it.\n    static func verticalGuide(for edge: Edge, _ d: ViewDimensions) -> CGFloat {\n        switch edge {\n        case .top: d[.bottom]\n        case .bottom: d[.top]\n        default: d[VerticalAlignment.center]\n        }\n    }\n\n    static func offset(for edge: Edge) -> CGSize {\n        switch edge {\n        case .top: CGSize(width: 0, height: -6)\n        case .bottom: CGSize(width: 0, height: 6)\n        case .leading: CGSize(width: -6, height: 0)\n        case .trailing: CGSize(width: 6, height: 0)\n        }\n    }\n\n    static func arrowPadding(for edge: Edge) -> Edge.Set {\n        switch edge {\n        case .top: .top\n        case .bottom: .bottom\n        case .leading: .leading\n        case .trailing: .trailing\n        }\n    }\n}\n\nprivate struct SKTooltipModifier<Tip: View>: ViewModifier {\n    @Binding var isPresented: Bool\n    let edge: Edge\n    let tip: Tip\n\n    func body(content: Content) -> some View {\n        let anchorEdge = edge\n        let alignment = SKTooltipGeometry.overlayAlignment(for: anchorEdge)\n        let shift = SKTooltipGeometry.offset(for: anchorEdge)\n\n        return content\n            .overlay(alignment: alignment) {\n                if isPresented {\n                    bubble\n                        .fixedSize()\n                        .alignmentGuide(alignment.vertical) { d in\n                            SKTooltipGeometry.verticalGuide(for: anchorEdge, d)\n                        }\n                        .offset(x: shift.width, y: shift.height)\n                        .transition(.opacity.combined(with: .scale(scale: 0.88)))\n                        .zIndex(1)\n                }\n            }\n            .skAnimation(.settle, value: isPresented)\n    }\n\n    private var bubble: some View {\n        tip\n            .font(SK.Type_.caption)\n            .foregroundStyle(SK.Palette.surface)\n            .multilineTextAlignment(.leading)\n            .padding(.horizontal, SK.Space.md)\n            .padding(.vertical, SK.Space.sm)\n            .padding(SKTooltipGeometry.arrowPadding(for: edge), 8)\n            .background {\n                SKTooltipShape(arrowEdge: edge)\n                    .fill(SK.Palette.label)\n                    .shadow(color: .black.opacity(0.22), radius: 10, y: 4)\n            }\n            .frame(maxWidth: 240)\n            .onTapGesture { isPresented = false }\n            .accessibilityAddTraits(.isStaticText)\n    }\n}\n\nextension View {\n    /// Shows a pointed tooltip attached to this view.\n    public func skTooltip<Tip: View>(\n        isPresented: Binding<Bool>,\n        edge: Edge = .bottom,\n        @ViewBuilder tip: () -> Tip\n    ) -> some View {\n        modifier(SKTooltipModifier(isPresented: isPresented, edge: edge, tip: tip()))\n    }\n}\n\n#Preview(\"SKTooltip\") {\n    @Previewable @State var a = true\n    @Previewable @State var b = false\n\n    VStack(spacing: 90) {\n        Image(systemName: \"questionmark.circle.fill\")\n            .font(SK.Icon.symbol(SK.Icon.xl))\n            .foregroundStyle(SK.Palette.accent)\n            .onTapGesture { a.toggle() }\n            .skTooltip(isPresented: $a, edge: .bottom) {\n                Text(\"Arrow points down at the thing it explains.\")\n            }\n\n        Image(systemName: \"bell.fill\")\n            .font(SK.Icon.symbol(SK.Icon.xl))\n            .foregroundStyle(SK.Palette.accent)\n            .onTapGesture { b.toggle() }\n            .skTooltip(isPresented: $b, edge: .top) {\n                Text(\"And up, when there is no room below.\")\n            }\n    }\n    .padding(SK.Space.xxxl)\n    .frame(maxWidth: .infinity, maxHeight: .infinity)\n    .background(SK.Palette.surfaceSunken)\n}\n"
+    }
+  ],
+  "variants": [
+    {
+      "id": "bottom",
+      "title": "Below",
+      "tier": "free"
+    },
+    {
+      "id": "top",
+      "title": "Above",
+      "tier": "free"
+    }
+  ],
+  "usage": "Button(\"?\") { show.toggle() }\n.skTooltip(isPresented: $show, edge: .top) { Text(\"Tap to refresh\") }",
+  "docs": "https://theswiftk.it.com/swiftui/tooltip",
+  "keywords": [
+    "ios tooltip",
+    "swiftui tooltip",
+    "swiftui popover tip"
+  ],
+  "meta": {
+    "searchVolume": 880
+  }
+}

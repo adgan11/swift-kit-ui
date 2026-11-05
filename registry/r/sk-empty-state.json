@@ -1,0 +1,50 @@
+{
+  "$schema": "https://theswiftk.it.com/ui/schema/registry-item.json",
+  "name": "sk-empty-state",
+  "type": "registry:component",
+  "title": "Empty State",
+  "description": "The screen you see when there is nothing to see. Most apps ship a blank view here, which reads as a bug rather than a state.",
+  "author": "Ahmed Gagan",
+  "tier": "free",
+  "platforms": {
+    "iOS": "17.0",
+    "macOS": "14.0"
+  },
+  "categories": [
+    "feedback"
+  ],
+  "dependencies": [],
+  "registryDependencies": [
+    "foundation"
+  ],
+  "files": [
+    {
+      "path": "Sources/SwiftKitUI/Components/SKEmptyState.swift",
+      "target": "SwiftKitUI/SKEmptyState.swift",
+      "type": "registry:component",
+      "lines": 114,
+      "content": "//\n//  SKEmptyState.swift\n//  Swift Kit UI\n//\n//  Requires: SwiftKitUI.swift\n//\n//  The screen you see when there is nothing to see. Most apps ship a blank view\n//  here, which reads as a bug rather than a state.\n//\n//  Usage:\n//      SKEmptyState(systemImage: \"tray\", title: \"No messages\",\n//                   message: \"When someone writes, it lands here.\",\n//                   actionTitle: \"Refresh\") { reload() }\n//\n\nimport SwiftUI\n\npublic struct SKEmptyState: View {\n    private let systemImage: String\n    private let title: String\n    private let message: String?\n    private let actionTitle: String?\n    private let action: (() -> Void)?\n    private let tint: Color\n\n    @State private var appeared = false\n    @Environment(\\.accessibilityReduceMotion) private var reduceMotion\n\n    public init(\n        systemImage: String,\n        title: String,\n        message: String? = nil,\n        actionTitle: String? = nil,\n        tint: Color = SK.Palette.accent,\n        action: (() -> Void)? = nil\n    ) {\n        self.systemImage = systemImage\n        self.title = title\n        self.message = message\n        self.actionTitle = actionTitle\n        self.tint = tint\n        self.action = action\n    }\n\n    public var body: some View {\n        VStack(spacing: SK.Space.lg) {\n            Image(systemName: systemImage)\n                .font(SK.Icon.symbol(44, weight: .regular))\n                .foregroundStyle(tint)\n                .frame(width: 92, height: 92)\n                .background(Circle().fill(tint.opacity(0.10)))\n                // A small settle on appear, so the state reads as arriving\n                // rather than as content that failed to load.\n                .scaleEffect(appeared ? 1 : 0.86)\n                .opacity(appeared ? 1 : 0)\n\n            VStack(spacing: SK.Space.xs) {\n                Text(title)\n                    .font(SK.Type_.headline)\n                    .foregroundStyle(SK.Palette.label)\n                if let message {\n                    Text(message)\n                        .font(SK.Type_.callout)\n                        .foregroundStyle(SK.Palette.labelSecondary)\n                        .multilineTextAlignment(.center)\n                        .fixedSize(horizontal: false, vertical: true)\n                }\n            }\n            .opacity(appeared ? 1 : 0)\n\n            if let actionTitle, let action {\n                Button(actionTitle) {\n                    action()\n                    SK.Haptic.play(.light)\n                }\n                .font(SK.Type_.headline)\n                .foregroundStyle(.white)\n                .padding(.horizontal, SK.Space.xl)\n                .padding(.vertical, SK.Space.md)\n                .background(Capsule().fill(tint))\n                .buttonStyle(.skPress)\n                .opacity(appeared ? 1 : 0)\n            }\n        }\n        .padding(SK.Space.xl)\n        .frame(maxWidth: 340)\n        .onAppear {\n            guard !reduceMotion else { appeared = true; return }\n            withAnimation(SKMotion.settle.standard.delay(0.05)) { appeared = true }\n        }\n        .accessibilityElement(children: .combine)\n    }\n}\n\n#Preview(\"SKEmptyState\") {\n    VStack(spacing: SK.Space.xxxl) {\n        SKEmptyState(\n            systemImage: \"tray\",\n            title: \"No messages yet\",\n            message: \"When someone writes to you, it will show up here.\",\n            actionTitle: \"Refresh\"\n        ) {}\n\n        SKEmptyState(\n            systemImage: \"wifi.slash\",\n            title: \"You're offline\",\n            message: \"Check your connection and try again.\",\n            tint: SK.Palette.warning\n        )\n    }\n    .frame(maxWidth: .infinity, maxHeight: .infinity)\n    .background(SK.Palette.surfaceSunken)\n}\n"
+    }
+  ],
+  "variants": [
+    {
+      "id": "with-action",
+      "title": "With Action",
+      "tier": "free"
+    },
+    {
+      "id": "plain",
+      "title": "Plain",
+      "tier": "free"
+    }
+  ],
+  "usage": "SKEmptyState(systemImage: \"tray\", title: \"No messages\",\nmessage: \"When someone writes, it lands here.\",\nactionTitle: \"Refresh\") { reload() }",
+  "docs": "https://theswiftk.it.com/swiftui/empty-state",
+  "keywords": [
+    "swiftui empty state",
+    "ios empty state view"
+  ],
+  "meta": {
+    "searchVolume": 60
+  }
+}

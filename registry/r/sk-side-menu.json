@@ -1,0 +1,51 @@
+{
+  "$schema": "https://theswiftk.it.com/ui/schema/registry-item.json",
+  "name": "sk-side-menu",
+  "type": "registry:component",
+  "title": "Side Menu",
+  "description": "A drawer that slides in from the edge, with the main content pushed and scaled behind it.",
+  "author": "Ahmed Gagan",
+  "tier": "free",
+  "platforms": {
+    "iOS": "17.0",
+    "macOS": "14.0"
+  },
+  "categories": [
+    "navigation"
+  ],
+  "dependencies": [],
+  "registryDependencies": [
+    "foundation"
+  ],
+  "files": [
+    {
+      "path": "Sources/SwiftKitUI/Components/SKSideMenu.swift",
+      "target": "SwiftKitUI/SKSideMenu.swift",
+      "type": "registry:component",
+      "lines": 144,
+      "content": "//\n//  SKSideMenu.swift\n//  Swift Kit UI\n//\n//  Requires: SwiftKitUI.swift\n//\n//  A drawer that slides in from the edge, with the main content pushed and\n//  scaled behind it.\n//\n//  Scaling the content rather than only dimming it is what sells the depth \u2014\n//  it reads as the app stepping back rather than a panel landing on top.\n//\n//  Usage:\n//      .skSideMenu(isOpen: $menuOpen) { MenuContent() }\n//\n\nimport SwiftUI\n\nprivate struct SKSideMenuModifier<Menu: View>: ViewModifier {\n    @Binding var isOpen: Bool\n    let width: CGFloat\n    let edge: HorizontalEdge\n    let menu: Menu\n\n    @State private var drag: CGFloat = 0\n    @Environment(\\.accessibilityReduceMotion) private var reduceMotion\n\n    private var sign: CGFloat { edge == .leading ? 1 : -1 }\n\n    private var offset: CGFloat {\n        let base = isOpen ? width * sign : 0\n        return base + drag\n    }\n\n    /// 0 closed, 1 fully open \u2014 drives the backdrop and the content scale.\n    private var progress: CGFloat {\n        min(max(abs(offset) / width, 0), 1)\n    }\n\n    func body(content: Content) -> some View {\n        ZStack(alignment: edge == .leading ? .leading : .trailing) {\n            content\n                .scaleEffect(1 - progress * 0.10, anchor: edge == .leading ? .trailing : .leading)\n                .offset(x: offset)\n                .overlay {\n                    if progress > 0.01 {\n                        Color.black.opacity(0.35 * progress)\n                            .ignoresSafeArea()\n                            .onTapGesture { close() }\n                    }\n                }\n                .disabled(isOpen)\n\n            drawer\n        }\n        .skAnimation(.settle, value: isOpen)\n        .gesture(edgeDrag)\n    }\n\n    private var drawer: some View {\n        menu\n            .frame(width: width)\n            .frame(maxHeight: .infinity)\n            .background(SK.Palette.surfaceElevated)\n            .ignoresSafeArea()\n            .offset(x: (isOpen ? 0 : -width * sign) + drag)\n            .shadow(color: .black.opacity(0.25), radius: 20)\n            .accessibilityHidden(!isOpen)\n    }\n\n    private var edgeDrag: some Gesture {\n        DragGesture(minimumDistance: 12)\n            .onChanged { g in\n                let raw = g.translation.width\n                // Only allow dragging in the direction that makes sense for the\n                // current state, so the drawer cannot be dragged past open.\n                if isOpen {\n                    drag = edge == .leading ? min(raw, 0) : max(raw, 0)\n                } else {\n                    drag = edge == .leading ? max(raw, 0) : min(raw, 0)\n                }\n                drag = min(max(drag, -width), width)\n            }\n            .onEnded { g in\n                let predicted = g.predictedEndTranslation.width * sign\n                withAnimation(SKMotion.settle.resolved(reduceMotion: reduceMotion)) {\n                    if isOpen && predicted < -width / 3 {\n                        isOpen = false\n                    } else if !isOpen && predicted > width / 3 {\n                        isOpen = true\n                        SK.Haptic.play(.light)\n                    }\n                    drag = 0\n                }\n            }\n    }\n\n    private func close() {\n        SK.Haptic.play(.light)\n        withAnimation(SKMotion.settle.resolved(reduceMotion: reduceMotion)) {\n            isOpen = false\n            drag = 0\n        }\n    }\n}\n\nextension View {\n    public func skSideMenu<Menu: View>(\n        isOpen: Binding<Bool>,\n        width: CGFloat = 280,\n        edge: HorizontalEdge = .leading,\n        @ViewBuilder menu: () -> Menu\n    ) -> some View {\n        modifier(SKSideMenuModifier(isOpen: isOpen, width: width, edge: edge, menu: menu()))\n    }\n}\n\n#Preview(\"SKSideMenu\") {\n    @Previewable @State var open = false\n\n    VStack(spacing: SK.Space.lg) {\n        Button(\"Open menu\") { open = true }\n            .font(SK.Type_.callout)\n            .foregroundStyle(SK.Palette.accent)\n        Text(\"Or drag in from the left edge\")\n            .font(SK.Type_.caption)\n            .foregroundStyle(SK.Palette.labelTertiary)\n    }\n    .frame(maxWidth: .infinity, maxHeight: .infinity)\n    .background(SK.Palette.surfaceSunken)\n    .skSideMenu(isOpen: $open) {\n        VStack(alignment: .leading, spacing: SK.Space.lg) {\n            Text(\"Menu\").font(SK.Type_.title).foregroundStyle(SK.Palette.label)\n            ForEach([\"Home\", \"Library\", \"Downloads\", \"Settings\"], id: \\.self) { item in\n                Text(item).font(SK.Type_.body).foregroundStyle(SK.Palette.labelSecondary)\n            }\n            Spacer()\n        }\n        .padding(SK.Space.xl)\n        .padding(.top, SK.Space.xxxl)\n        .frame(maxWidth: .infinity, alignment: .leading)\n    }\n}\n"
+    }
+  ],
+  "variants": [
+    {
+      "id": "leading",
+      "title": "Leading",
+      "tier": "free"
+    },
+    {
+      "id": "trailing",
+      "title": "Trailing",
+      "tier": "free"
+    }
+  ],
+  "usage": ".skSideMenu(isOpen: $menuOpen) { MenuContent() }",
+  "docs": "https://theswiftk.it.com/swiftui/side-menu",
+  "keywords": [
+    "swiftui side menu",
+    "swiftui drawer",
+    "ios hamburger menu"
+  ],
+  "meta": {
+    "searchVolume": 40
+  }
+}

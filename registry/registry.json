@@ -1,0 +1,1070 @@
+{
+  "$schema": "https://theswiftk.it.com/ui/schema/registry.json",
+  "name": "swift-kit-ui",
+  "homepage": "https://theswiftk.it.com/ui",
+  "author": "Ahmed Gagan",
+  "license": "MIT",
+  "platforms": {
+    "iOS": "17.0",
+    "macOS": "14.0"
+  },
+  "install": {
+    "manual": "Add SwiftKitUI.swift once, then drop in any component file beside it.",
+    "download": "https://theswiftk.it.com/ui/swift-kit-ui.zip",
+    "llms": "https://theswiftk.it.com/ui/llms.txt"
+  },
+  "rules": "Every component is ONE self-contained Swift file that depends only on `foundation` (SwiftKitUI.swift). Never import one component from another. There are no third-party package dependencies.",
+  "count": 56,
+  "items": [
+    {
+      "name": "foundation",
+      "type": "registry:lib",
+      "title": "SwiftKitUI Foundation",
+      "description": "Design tokens, the five-curve motion system, haptics, and surface styles including iOS 26 Liquid Glass. Every component depends on this and nothing else. Install it once.",
+      "tier": "free",
+      "categories": [
+        "foundation"
+      ],
+      "registryDependencies": [],
+      "variants": [],
+      "docs": "https://theswiftk.it.com/ui/foundation",
+      "url": "https://theswiftk.it.com/ui/r/foundation.json"
+    },
+    {
+      "name": "sk-toggle",
+      "type": "registry:component",
+      "title": "Toggle",
+      "description": "A toggle you can *drag*, not just tap. That one detail is most of why the system switch feels expensive and a hand-rolled one usually does not \u2014 the knob tracks your finger, squashes while held, and commits on release using gesture velocity rather than a naive midpoint test.",
+      "tier": "free",
+      "categories": [
+        "controls"
+      ],
+      "registryDependencies": [
+        "foundation"
+      ],
+      "variants": [
+        "solid",
+        "liquid-glass"
+      ],
+      "docs": "https://theswiftk.it.com/swiftui/toggle",
+      "url": "https://theswiftk.it.com/ui/r/sk-toggle.json"
+    },
+    {
+      "name": "sk-activity-indicator",
+      "type": "registry:component",
+      "title": "Activity Indicator",
+      "description": "Three loading indicators that are not the system spinner: bouncing dots, a pulsing arc, and equaliser bars.",
+      "tier": "free",
+      "categories": [
+        "feedback"
+      ],
+      "registryDependencies": [
+        "foundation"
+      ],
+      "variants": [
+        "dots",
+        "arc",
+        "bars"
+      ],
+      "docs": "https://theswiftk.it.com/swiftui/progressview",
+      "url": "https://theswiftk.it.com/ui/r/sk-activity-indicator.json"
+    },
+    {
+      "name": "sk-button",
+      "type": "registry:component",
+      "title": "Button",
+      "description": "Five button roles on one interruptible press animation. The press uses a spring rather than a duration curve so a rapid double-tap does not queue up two animations and lag behind the finger \u2014 the second press retargets the first mid-flight.",
+      "tier": "free",
+      "categories": [
+        "actions"
+      ],
+      "registryDependencies": [
+        "foundation"
+      ],
+      "variants": [
+        "primary",
+        "secondary",
+        "ghost",
+        "destructive",
+        "liquid-glass"
+      ],
+      "docs": "https://theswiftk.it.com/swiftui/button",
+      "url": "https://theswiftk.it.com/ui/r/sk-button.json"
+    },
+    {
+      "name": "sk-tab-bar",
+      "type": "registry:component",
+      "title": "Custom Tab Bar",
+      "description": "A custom tab bar where the selection indicator *travels* between tabs rather than cutting. That is `matchedGeometryEffect` doing the work: one pill exists at a time and SwiftUI interpolates its frame, which is both cheaper and smoother than animating an offset you calculate yourself.",
+      "tier": "free",
+      "categories": [
+        "navigation"
+      ],
+      "registryDependencies": [
+        "foundation"
+      ],
+      "variants": [
+        "floating",
+        "liquid-glass"
+      ],
+      "docs": "https://theswiftk.it.com/swiftui/custom-tab-bar",
+      "url": "https://theswiftk.it.com/ui/r/sk-tab-bar.json"
+    },
+    {
+      "name": "sk-wheel-picker",
+      "type": "registry:component",
+      "title": "Wheel Picker",
+      "description": "A horizontal ruler picker \u2014 the control you want for weight, age, duration, tempo. Values snap to centre and tick as they pass.",
+      "tier": "free",
+      "categories": [
+        "controls"
+      ],
+      "registryDependencies": [
+        "foundation"
+      ],
+      "variants": [
+        "default"
+      ],
+      "docs": "https://theswiftk.it.com/swiftui/wheel-picker",
+      "url": "https://theswiftk.it.com/ui/r/sk-wheel-picker.json"
+    },
+    {
+      "name": "sk-alert",
+      "type": "registry:component",
+      "title": "Alert",
+      "description": "A styled alert that can carry a text field \u2014 the thing the system alert technically supports but gives you no control over.",
+      "tier": "free",
+      "categories": [
+        "overlays"
+      ],
+      "registryDependencies": [
+        "foundation"
+      ],
+      "variants": [
+        "confirm",
+        "text-field"
+      ],
+      "docs": "https://theswiftk.it.com/swiftui/alert",
+      "url": "https://theswiftk.it.com/ui/r/sk-alert.json"
+    },
+    {
+      "name": "sk-slider",
+      "type": "registry:component",
+      "title": "Slider",
+      "description": "A slider that grows under your thumb and ticks haptically as it crosses steps. The track thickens on contact \u2014 the same trick that makes the system volume slider feel physical.",
+      "tier": "free",
+      "categories": [
+        "controls"
+      ],
+      "registryDependencies": [
+        "foundation"
+      ],
+      "variants": [
+        "continuous",
+        "stepped"
+      ],
+      "docs": "https://theswiftk.it.com/swiftui/slider",
+      "url": "https://theswiftk.it.com/ui/r/sk-slider.json"
+    },
+    {
+      "name": "sk-tooltip",
+      "type": "registry:component",
+      "title": "Tooltip",
+      "description": "A pointed bubble anchored to whatever it is explaining. For onboarding coach-marks and \"what does this do?\" hints.",
+      "tier": "free",
+      "categories": [
+        "feedback"
+      ],
+      "registryDependencies": [
+        "foundation"
+      ],
+      "variants": [
+        "bottom",
+        "top"
+      ],
+      "docs": "https://theswiftk.it.com/swiftui/tooltip",
+      "url": "https://theswiftk.it.com/ui/r/sk-tooltip.json"
+    },
+    {
+      "name": "sk-glass-panel",
+      "type": "registry:component",
+      "title": "Glass Panel",
+      "description": "iOS 26 Liquid Glass, with a fallback that is actually worth shipping below iOS 26 rather than a flat rectangle.",
+      "tier": "free",
+      "categories": [
+        "surfaces"
+      ],
+      "registryDependencies": [
+        "foundation"
+      ],
+      "variants": [
+        "subtle",
+        "regular",
+        "strong"
+      ],
+      "docs": "https://theswiftk.it.com/swiftui/liquid-glass",
+      "url": "https://theswiftk.it.com/ui/r/sk-glass-panel.json"
+    },
+    {
+      "name": "sk-color-swatch-picker",
+      "type": "registry:component",
+      "title": "Color Swatch Picker",
+      "description": "A swatch grid. Use this instead of the system ColorPicker when you have a fixed brand palette \u2014 an eyedropper and an infinite colour wheel are the wrong affordance for \"pick one of our eight accent colours\".",
+      "tier": "free",
+      "categories": [
+        "controls"
+      ],
+      "registryDependencies": [
+        "foundation"
+      ],
+      "variants": [
+        "default"
+      ],
+      "docs": "https://theswiftk.it.com/swiftui/color-picker",
+      "url": "https://theswiftk.it.com/ui/r/sk-color-swatch-picker.json"
+    },
+    {
+      "name": "sk-badge",
+      "type": "registry:component",
+      "title": "Badge",
+      "description": "A small status pill.",
+      "tier": "free",
+      "categories": [
+        "feedback"
+      ],
+      "registryDependencies": [
+        "foundation"
+      ],
+      "variants": [
+        "capsule",
+        "circle"
+      ],
+      "docs": "https://theswiftk.it.com/swiftui/badge",
+      "url": "https://theswiftk.it.com/ui/r/sk-badge.json"
+    },
+    {
+      "name": "sk-text-field",
+      "type": "registry:component",
+      "title": "Text Field",
+      "description": "A text field with a label that rises out of the way on focus, a focus ring, and an error state that does not resize the layout when it appears.",
+      "tier": "free",
+      "categories": [
+        "inputs"
+      ],
+      "registryDependencies": [
+        "foundation"
+      ],
+      "variants": [
+        "default",
+        "secure",
+        "error"
+      ],
+      "docs": "https://theswiftk.it.com/swiftui/textfield",
+      "url": "https://theswiftk.it.com/ui/r/sk-text-field.json"
+    },
+    {
+      "name": "sk-segmented-control",
+      "type": "registry:component",
+      "title": "Segmented Control",
+      "description": "The indicator slides between segments via matchedGeometryEffect rather than cutting. Same technique as the tab bar, deliberately \u2014 two controls that both express \"one of these is selected\" should move the same way.",
+      "tier": "free",
+      "categories": [
+        "controls"
+      ],
+      "registryDependencies": [
+        "foundation"
+      ],
+      "variants": [
+        "default"
+      ],
+      "docs": "https://theswiftk.it.com/swiftui/segmented-control",
+      "url": "https://theswiftk.it.com/ui/r/sk-segmented-control.json"
+    },
+    {
+      "name": "sk-card",
+      "type": "registry:component",
+      "title": "Card",
+      "description": "A container with the kit's standard internal padding.",
+      "tier": "free",
+      "categories": [
+        "surfaces"
+      ],
+      "registryDependencies": [
+        "foundation"
+      ],
+      "variants": [
+        "bordered",
+        "elevated",
+        "liquid-glass"
+      ],
+      "docs": "https://theswiftk.it.com/swiftui/card",
+      "url": "https://theswiftk.it.com/ui/r/sk-card.json"
+    },
+    {
+      "name": "sk-stepper",
+      "type": "registry:component",
+      "title": "Stepper",
+      "description": "Minus / value / plus, with press-and-hold repeat that accelerates.",
+      "tier": "free",
+      "categories": [
+        "controls"
+      ],
+      "registryDependencies": [
+        "foundation"
+      ],
+      "variants": [
+        "default"
+      ],
+      "docs": "https://theswiftk.it.com/swiftui/stepper",
+      "url": "https://theswiftk.it.com/ui/r/sk-stepper.json"
+    },
+    {
+      "name": "sk-gauge",
+      "type": "registry:component",
+      "title": "Gauge",
+      "description": "An arc gauge. Speed, battery, score, storage.",
+      "tier": "free",
+      "categories": [
+        "data"
+      ],
+      "registryDependencies": [
+        "foundation"
+      ],
+      "variants": [
+        "default"
+      ],
+      "docs": "https://theswiftk.it.com/swiftui/gauge",
+      "url": "https://theswiftk.it.com/ui/r/sk-gauge.json"
+    },
+    {
+      "name": "sk-progress-ring",
+      "type": "registry:component",
+      "title": "Progress Ring",
+      "description": "A closed circular progress ring, determinate or indeterminate.",
+      "tier": "free",
+      "categories": [
+        "feedback"
+      ],
+      "registryDependencies": [
+        "foundation"
+      ],
+      "variants": [
+        "determinate",
+        "indeterminate"
+      ],
+      "docs": "https://theswiftk.it.com/swiftui/progress-ring",
+      "url": "https://theswiftk.it.com/ui/r/sk-progress-ring.json"
+    },
+    {
+      "name": "sk-neumorphic-card",
+      "type": "registry:component",
+      "title": "Neumorphic Card",
+      "description": "Soft UI: two shadows, one light from the top-left and one dark from the bottom-right, so the surface appears extruded from its background.",
+      "tier": "free",
+      "categories": [
+        "surfaces"
+      ],
+      "registryDependencies": [
+        "foundation"
+      ],
+      "variants": [
+        "raised",
+        "pressed"
+      ],
+      "docs": "https://theswiftk.it.com/swiftui/neumorphism",
+      "url": "https://theswiftk.it.com/ui/r/sk-neumorphic-card.json"
+    },
+    {
+      "name": "sk-toast",
+      "type": "registry:component",
+      "title": "Toast",
+      "description": "A transient message, presented as a modifier so it overlays the whole screen instead of being wedged into your layout.",
+      "tier": "free",
+      "categories": [
+        "feedback"
+      ],
+      "registryDependencies": [
+        "foundation"
+      ],
+      "variants": [
+        "info",
+        "success",
+        "warning",
+        "error"
+      ],
+      "docs": "https://theswiftk.it.com/swiftui/toast",
+      "url": "https://theswiftk.it.com/ui/r/sk-toast.json"
+    },
+    {
+      "name": "sk-search-bar",
+      "type": "registry:component",
+      "title": "Search Bar",
+      "description": "Search field with a Cancel button that slides in on focus.",
+      "tier": "free",
+      "categories": [
+        "inputs"
+      ],
+      "registryDependencies": [
+        "foundation"
+      ],
+      "variants": [
+        "default"
+      ],
+      "docs": "https://theswiftk.it.com/swiftui/search-bar",
+      "url": "https://theswiftk.it.com/ui/r/sk-search-bar.json"
+    },
+    {
+      "name": "sk-navigation-bar",
+      "type": "registry:component",
+      "title": "Navigation Bar",
+      "description": "A navigation bar that fades in its background as content scrolls under it, rather than sitting on an opaque slab from the first pixel.",
+      "tier": "free",
+      "categories": [
+        "navigation"
+      ],
+      "registryDependencies": [
+        "foundation"
+      ],
+      "variants": [
+        "default"
+      ],
+      "docs": "https://theswiftk.it.com/swiftui/navigation-bar",
+      "url": "https://theswiftk.it.com/ui/r/sk-navigation-bar.json"
+    },
+    {
+      "name": "sk-row",
+      "type": "registry:component",
+      "title": "Row",
+      "description": "A list row: optional leading symbol, title, optional subtitle, and whatever you want on the trailing edge.",
+      "tier": "free",
+      "categories": [
+        "lists"
+      ],
+      "registryDependencies": [
+        "foundation"
+      ],
+      "variants": [
+        "plain",
+        "tappable"
+      ],
+      "docs": "https://theswiftk.it.com/swiftui/row",
+      "url": "https://theswiftk.it.com/ui/r/sk-row.json"
+    },
+    {
+      "name": "sk-bottom-sheet",
+      "type": "registry:component",
+      "title": "Bottom Sheet",
+      "description": "A draggable bottom sheet you can actually style \u2014 grabber, corner radius, backdrop and detents all yours.",
+      "tier": "free",
+      "categories": [
+        "overlays"
+      ],
+      "registryDependencies": [
+        "foundation"
+      ],
+      "variants": [
+        "medium",
+        "large"
+      ],
+      "docs": "https://theswiftk.it.com/swiftui/sheet",
+      "url": "https://theswiftk.it.com/ui/r/sk-bottom-sheet.json"
+    },
+    {
+      "name": "sk-section",
+      "type": "registry:component",
+      "title": "Section",
+      "description": "A titled group. Pair with SKRow, or put anything else inside.",
+      "tier": "free",
+      "categories": [
+        "lists"
+      ],
+      "registryDependencies": [
+        "foundation"
+      ],
+      "variants": [
+        "bordered",
+        "elevated"
+      ],
+      "docs": "https://theswiftk.it.com/swiftui/section",
+      "url": "https://theswiftk.it.com/ui/r/sk-section.json"
+    },
+    {
+      "name": "sk-rating",
+      "type": "registry:component",
+      "title": "Rating",
+      "description": "Star rating you can tap or drag across. Dragging is the part most implementations skip, and it is how people actually set a rating once they realise it works.",
+      "tier": "free",
+      "categories": [
+        "controls"
+      ],
+      "registryDependencies": [
+        "foundation"
+      ],
+      "variants": [
+        "stars"
+      ],
+      "docs": "https://theswiftk.it.com/swiftui/rating",
+      "url": "https://theswiftk.it.com/ui/r/sk-rating.json"
+    },
+    {
+      "name": "sk-chip",
+      "type": "registry:component",
+      "title": "Chip",
+      "description": "A selectable tag. Filter bars, topic pickers, multi-select.",
+      "tier": "free",
+      "categories": [
+        "controls"
+      ],
+      "registryDependencies": [
+        "foundation"
+      ],
+      "variants": [
+        "default",
+        "removable"
+      ],
+      "docs": "https://theswiftk.it.com/swiftui/chip",
+      "url": "https://theswiftk.it.com/ui/r/sk-chip.json"
+    },
+    {
+      "name": "sk-otp-field",
+      "type": "registry:component",
+      "title": "OTP Field",
+      "description": "One-time-code entry. A real hidden text field drives visible boxes, which is the only approach that keeps iOS SMS autofill working \u2014 per-box TextFields look right and then silently break the one feature that matters.",
+      "tier": "free",
+      "categories": [
+        "inputs"
+      ],
+      "registryDependencies": [
+        "foundation"
+      ],
+      "variants": [
+        "default"
+      ],
+      "docs": "https://theswiftk.it.com/swiftui/otp-field",
+      "url": "https://theswiftk.it.com/ui/r/sk-otp-field.json"
+    },
+    {
+      "name": "sk-accordion",
+      "type": "registry:component",
+      "title": "Accordion",
+      "description": "Expand/collapse with the chevron rotating on the same spring as the height change, so the two read as one movement instead of two.",
+      "tier": "free",
+      "categories": [
+        "layout"
+      ],
+      "registryDependencies": [
+        "foundation"
+      ],
+      "variants": [
+        "default"
+      ],
+      "docs": "https://theswiftk.it.com/swiftui/accordion",
+      "url": "https://theswiftk.it.com/ui/r/sk-accordion.json"
+    },
+    {
+      "name": "sk-timeline",
+      "type": "registry:component",
+      "title": "Timeline",
+      "description": "A vertical timeline: order status, activity feeds, onboarding progress.",
+      "tier": "free",
+      "categories": [
+        "layout"
+      ],
+      "registryDependencies": [
+        "foundation"
+      ],
+      "variants": [
+        "default"
+      ],
+      "docs": "https://theswiftk.it.com/swiftui/timeline",
+      "url": "https://theswiftk.it.com/ui/r/sk-timeline.json"
+    },
+    {
+      "name": "sk-avatar",
+      "type": "registry:component",
+      "title": "Avatar",
+      "description": "Avatar with an initials fallback, an optional presence dot, and a stacked group variant.",
+      "tier": "free",
+      "categories": [
+        "display"
+      ],
+      "registryDependencies": [
+        "foundation"
+      ],
+      "variants": [
+        "single",
+        "group"
+      ],
+      "docs": "https://theswiftk.it.com/swiftui/avatar",
+      "url": "https://theswiftk.it.com/ui/r/sk-avatar.json"
+    },
+    {
+      "name": "sk-pull-to-refresh",
+      "type": "registry:component",
+      "title": "Pull To Refresh",
+      "description": "A pull-to-refresh indicator you can brand, unlike `.refreshable`'s fixed system spinner.",
+      "tier": "free",
+      "categories": [
+        "interaction"
+      ],
+      "registryDependencies": [
+        "foundation"
+      ],
+      "variants": [
+        "default"
+      ],
+      "docs": "https://theswiftk.it.com/swiftui/pull-to-refresh",
+      "url": "https://theswiftk.it.com/ui/r/sk-pull-to-refresh.json"
+    },
+    {
+      "name": "sk-icon-bubble",
+      "type": "registry:component",
+      "title": "Icon Bubble",
+      "description": "A tinted container for an SF Symbol. The thing every settings row, feature list and empty state reinvents slightly differently.",
+      "tier": "free",
+      "categories": [
+        "decoration"
+      ],
+      "registryDependencies": [
+        "foundation"
+      ],
+      "variants": [
+        "rounded",
+        "circle"
+      ],
+      "docs": "https://theswiftk.it.com/swiftui/icon-bubble",
+      "url": "https://theswiftk.it.com/ui/r/sk-icon-bubble.json"
+    },
+    {
+      "name": "sk-carousel",
+      "type": "registry:component",
+      "title": "Carousel",
+      "description": "A snapping card carousel. Off-centre cards shrink and dim as they move away, which gives the row depth and makes the focused card unambiguous.",
+      "tier": "free",
+      "categories": [
+        "layout"
+      ],
+      "registryDependencies": [
+        "foundation"
+      ],
+      "variants": [
+        "default"
+      ],
+      "docs": "https://theswiftk.it.com/swiftui/carousel",
+      "url": "https://theswiftk.it.com/ui/r/sk-carousel.json"
+    },
+    {
+      "name": "sk-confetti",
+      "type": "registry:component",
+      "title": "Confetti",
+      "description": "A celebration burst for purchases, streaks and completions.",
+      "tier": "free",
+      "categories": [
+        "delight"
+      ],
+      "registryDependencies": [
+        "foundation"
+      ],
+      "variants": [
+        "default"
+      ],
+      "docs": "https://theswiftk.it.com/swiftui/confetti",
+      "url": "https://theswiftk.it.com/ui/r/sk-confetti.json"
+    },
+    {
+      "name": "sk-empty-state",
+      "type": "registry:component",
+      "title": "Empty State",
+      "description": "The screen you see when there is nothing to see. Most apps ship a blank view here, which reads as a bug rather than a state.",
+      "tier": "free",
+      "categories": [
+        "feedback"
+      ],
+      "registryDependencies": [
+        "foundation"
+      ],
+      "variants": [
+        "with-action",
+        "plain"
+      ],
+      "docs": "https://theswiftk.it.com/swiftui/empty-state",
+      "url": "https://theswiftk.it.com/ui/r/sk-empty-state.json"
+    },
+    {
+      "name": "sk-floating-action-button",
+      "type": "registry:component",
+      "title": "Floating Action Button",
+      "description": "A FAB that fans out secondary actions when expanded.",
+      "tier": "free",
+      "categories": [
+        "actions"
+      ],
+      "registryDependencies": [
+        "foundation"
+      ],
+      "variants": [
+        "menu",
+        "single"
+      ],
+      "docs": "https://theswiftk.it.com/swiftui/floating-action-button",
+      "url": "https://theswiftk.it.com/ui/r/sk-floating-action-button.json"
+    },
+    {
+      "name": "sk-page-indicator",
+      "type": "registry:component",
+      "title": "Page Indicator",
+      "description": "Page dots where the active one stretches into a capsule instead of just changing colour. Tappable, so it doubles as navigation.",
+      "tier": "free",
+      "categories": [
+        "navigation"
+      ],
+      "registryDependencies": [
+        "foundation"
+      ],
+      "variants": [
+        "dots",
+        "bars"
+      ],
+      "docs": "https://theswiftk.it.com/swiftui/page-indicator",
+      "url": "https://theswiftk.it.com/ui/r/sk-page-indicator.json"
+    },
+    {
+      "name": "sk-skeleton",
+      "type": "registry:component",
+      "title": "Skeleton",
+      "description": "Placeholder shapes for loading states.",
+      "tier": "free",
+      "categories": [
+        "feedback"
+      ],
+      "registryDependencies": [
+        "foundation"
+      ],
+      "variants": [
+        "row",
+        "text"
+      ],
+      "docs": "https://theswiftk.it.com/swiftui/skeleton",
+      "url": "https://theswiftk.it.com/ui/r/sk-skeleton.json"
+    },
+    {
+      "name": "sk-side-menu",
+      "type": "registry:component",
+      "title": "Side Menu",
+      "description": "A drawer that slides in from the edge, with the main content pushed and scaled behind it.",
+      "tier": "free",
+      "categories": [
+        "navigation"
+      ],
+      "registryDependencies": [
+        "foundation"
+      ],
+      "variants": [
+        "leading",
+        "trailing"
+      ],
+      "docs": "https://theswiftk.it.com/swiftui/side-menu",
+      "url": "https://theswiftk.it.com/ui/r/sk-side-menu.json"
+    },
+    {
+      "name": "sk-sparkline",
+      "type": "registry:component",
+      "title": "Sparkline",
+      "description": "A compact trend line for cards and rows \u2014 no axes, no legend, no chart framework. Optional gradient fill and a highlighted last point.",
+      "tier": "free",
+      "categories": [
+        "data"
+      ],
+      "registryDependencies": [
+        "foundation"
+      ],
+      "variants": [
+        "filled",
+        "line"
+      ],
+      "docs": "https://theswiftk.it.com/swiftui/sparkline",
+      "url": "https://theswiftk.it.com/ui/r/sk-sparkline.json"
+    },
+    {
+      "name": "sk-chat-bubble",
+      "type": "registry:component",
+      "title": "Chat Bubble",
+      "description": "A message bubble whose body and tail are one continuous path, so a border follows the silhouette instead of running around two shapes. Consecutive messages group: corners tighten on the sender's side and only the last bubble keeps its tail. Carries sending, sent and failed states, with retry on failure.",
+      "tier": "free",
+      "categories": [
+        "ai"
+      ],
+      "registryDependencies": [
+        "foundation"
+      ],
+      "variants": [
+        "conversation",
+        "states"
+      ],
+      "docs": "https://theswiftk.it.com/swiftui/chat-bubble",
+      "url": "https://theswiftk.it.com/ui/r/sk-chat-bubble.json"
+    },
+    {
+      "name": "sk-streaming-text",
+      "type": "registry:component",
+      "title": "Streaming Text",
+      "description": "Renders a model response at a steady reading cadence no matter how erratically the tokens arrive. It keeps a reveal cursor and drains toward the received length with a bounded catch-up rate, so a burst of forty tokens does not snap onto the screen and a stall does not freeze it. The caret is solid while glyphs land and blinks only while waiting.",
+      "tier": "free",
+      "categories": [
+        "ai"
+      ],
+      "registryDependencies": [
+        "foundation"
+      ],
+      "variants": [
+        "default"
+      ],
+      "docs": "https://theswiftk.it.com/swiftui/streaming-text",
+      "url": "https://theswiftk.it.com/ui/r/sk-streaming-text.json"
+    },
+    {
+      "name": "sk-chat-composer",
+      "type": "registry:component",
+      "title": "Chat Composer",
+      "description": "A growing input bar whose trailing button changes job rather than multiplying: dictate when empty, send when there is a draft, stop while the model is answering. The field grows to a line limit then scrolls internally, so the send button can never be pushed off screen.",
+      "tier": "free",
+      "categories": [
+        "ai"
+      ],
+      "registryDependencies": [
+        "foundation"
+      ],
+      "variants": [
+        "default"
+      ],
+      "docs": "https://theswiftk.it.com/swiftui/chat-composer",
+      "url": "https://theswiftk.it.com/ui/r/sk-chat-composer.json"
+    },
+    {
+      "name": "sk-markdown-view",
+      "type": "registry:component",
+      "title": "Markdown View",
+      "description": "Markdown rendered as real blocks \u2014 headings, lists, quotes, rules and fenced code \u2014 with inline parsing handed to Foundation so bold, links and inline code still work inside a bullet. Built to render mid-stream: an unterminated code fence is treated as an open code block rather than as literal backticks.",
+      "tier": "free",
+      "categories": [
+        "ai"
+      ],
+      "registryDependencies": [
+        "foundation"
+      ],
+      "variants": [
+        "default"
+      ],
+      "docs": "https://theswiftk.it.com/swiftui/markdown-view",
+      "url": "https://theswiftk.it.com/ui/r/sk-markdown-view.json"
+    },
+    {
+      "name": "sk-code-block",
+      "type": "registry:component",
+      "title": "Code Block",
+      "description": "A code surface with copy-in-place confirmation, an optional gutter, and horizontal scrolling rather than wrapping. Highlighting is four token classes applied in priority order with range claiming, so a keyword inside a string stays a string.",
+      "tier": "free",
+      "categories": [
+        "ai"
+      ],
+      "registryDependencies": [
+        "foundation"
+      ],
+      "variants": [
+        "swift",
+        "line-numbers"
+      ],
+      "docs": "https://theswiftk.it.com/swiftui/code-block",
+      "url": "https://theswiftk.it.com/ui/r/sk-code-block.json"
+    },
+    {
+      "name": "sk-reasoning-block",
+      "type": "registry:component",
+      "title": "Reasoning Block",
+      "description": "The collapsible thinking disclosure, showing the line the model is currently on rather than a spinner. Collapsed it costs one line; expanded it is the full trace. When reasoning ends the header settles into the measured duration.",
+      "tier": "free",
+      "categories": [
+        "ai"
+      ],
+      "registryDependencies": [
+        "foundation"
+      ],
+      "variants": [
+        "thinking",
+        "finished"
+      ],
+      "docs": "https://theswiftk.it.com/swiftui/reasoning-block",
+      "url": "https://theswiftk.it.com/ui/r/sk-reasoning-block.json"
+    },
+    {
+      "name": "sk-tool-call-card",
+      "type": "registry:component",
+      "title": "Tool Call Card",
+      "description": "Names the action an agent is taking while it takes it, with an indeterminate bar that proves the app is alive without pretending to measure progress. Running, success and failure states; arguments and results stay collapsed behind a disclosure.",
+      "tier": "free",
+      "categories": [
+        "ai"
+      ],
+      "registryDependencies": [
+        "foundation"
+      ],
+      "variants": [
+        "running",
+        "success",
+        "failure"
+      ],
+      "docs": "https://theswiftk.it.com/swiftui/tool-call-card",
+      "url": "https://theswiftk.it.com/ui/r/sk-tool-call-card.json"
+    },
+    {
+      "name": "sk-citation-chip",
+      "type": "registry:component",
+      "title": "Citation Chip",
+      "description": "An inline source marker sized to sit inside a sentence without breaking its rhythm, with a fixed minimum width so one- and two-digit citations do not jitter the line. Tapping opens a popover rather than pushing a screen, and stays a popover on iPhone.",
+      "tier": "free",
+      "categories": [
+        "ai"
+      ],
+      "registryDependencies": [
+        "foundation"
+      ],
+      "variants": [
+        "numbered",
+        "domain"
+      ],
+      "docs": "https://theswiftk.it.com/swiftui/citation-chip",
+      "url": "https://theswiftk.it.com/ui/r/sk-citation-chip.json"
+    },
+    {
+      "name": "sk-token-meter",
+      "type": "registry:component",
+      "title": "Token Meter",
+      "description": "Quota usage that changes colour at 70% and 90%, where the copy changes and the upgrade action appears. A prompt to upgrade at 15% is an advert; the same prompt at 92% is help. The fill glides rather than snapping, so an expensive action is visibly expensive.",
+      "tier": "free",
+      "categories": [
+        "ai"
+      ],
+      "registryDependencies": [
+        "foundation"
+      ],
+      "variants": [
+        "card",
+        "compact"
+      ],
+      "docs": "https://theswiftk.it.com/swiftui/token-meter",
+      "url": "https://theswiftk.it.com/ui/r/sk-token-meter.json"
+    },
+    {
+      "name": "sk-model-picker",
+      "type": "registry:component",
+      "title": "Model Picker",
+      "description": "Model selection in plain language: every row carries a subtitle saying what the trade is and a badge for fast, balanced or powerful, with the raw identifier kept in monospace for the people who want it. Locked models are shown rather than hidden, because a model the user cannot reach is the most persuasive upgrade prompt an AI app has.",
+      "tier": "free",
+      "categories": [
+        "ai"
+      ],
+      "registryDependencies": [
+        "foundation"
+      ],
+      "variants": [
+        "button",
+        "list"
+      ],
+      "docs": "https://theswiftk.it.com/swiftui/model-picker",
+      "url": "https://theswiftk.it.com/ui/r/sk-model-picker.json"
+    },
+    {
+      "name": "sk-prompt-suggestions",
+      "type": "registry:component",
+      "title": "Prompt Suggestions",
+      "description": "The starter prompts on an empty assistant screen. They arrive on a 45ms stagger \u2014 slow enough to read as sequence, fast enough that nobody waits. Wrapped by default via a custom flow layout, because a horizontal rail hides the fourth suggestion off screen and a suggestion nobody sees does no work.",
+      "tier": "free",
+      "categories": [
+        "ai"
+      ],
+      "registryDependencies": [
+        "foundation"
+      ],
+      "variants": [
+        "wrapped",
+        "rail"
+      ],
+      "docs": "https://theswiftk.it.com/swiftui/prompt-suggestions",
+      "url": "https://theswiftk.it.com/ui/r/sk-prompt-suggestions.json"
+    },
+    {
+      "name": "sk-voice-orb",
+      "type": "registry:component",
+      "title": "Voice Orb",
+      "description": "A microphone target whose ring reacts to real audio level, drawn in a single Canvas so 44 bars cost one draw instead of 44 layout passes. Uses asymmetric smoothing \u2014 fast attack, slow release \u2014 which is why it tracks speech instead of wobbling behind it, and two incommensurate waves so the ring never visibly loops.",
+      "tier": "free",
+      "categories": [
+        "ai"
+      ],
+      "registryDependencies": [
+        "foundation"
+      ],
+      "variants": [
+        "listening",
+        "idle",
+        "processing"
+      ],
+      "docs": "https://theswiftk.it.com/swiftui/voice-orb",
+      "url": "https://theswiftk.it.com/ui/r/sk-voice-orb.json"
+    },
+    {
+      "name": "sk-message-actions",
+      "type": "registry:component",
+      "title": "Message Actions",
+      "description": "Copy, regenerate and rate under a reply. Copy confirms in place with a tick and the row does not resize; the rating is exclusive and latching, and tapping the lit thumb clears it. Deliberately quiet \u2014 it sits under every reply, so anything louder competes with the reply.",
+      "tier": "free",
+      "categories": [
+        "ai"
+      ],
+      "registryDependencies": [
+        "foundation"
+      ],
+      "variants": [
+        "default"
+      ],
+      "docs": "https://theswiftk.it.com/swiftui/message-actions",
+      "url": "https://theswiftk.it.com/ui/r/sk-message-actions.json"
+    },
+    {
+      "name": "sk-attachment-tray",
+      "type": "registry:component",
+      "title": "Attachment Tray",
+      "description": "Files staged for sending, each with its own progress ring on the thumbnail rather than one shared bar \u2014 three uploads at three speeds cannot be described by a single percentage. Removal animates the remaining tiles closed so it is clear which one went.",
+      "tier": "free",
+      "categories": [
+        "ai"
+      ],
+      "registryDependencies": [
+        "foundation"
+      ],
+      "variants": [
+        "default"
+      ],
+      "docs": "https://theswiftk.it.com/swiftui/attachment-tray",
+      "url": "https://theswiftk.it.com/ui/r/sk-attachment-tray.json"
+    },
+    {
+      "name": "sk-conversation-row",
+      "type": "registry:component",
+      "title": "Conversation Row",
+      "description": "A row for the conversation list, with a timestamp that adapts to age \u2014 a time today, a weekday this week, a date beyond. Unread is carried by weight and a dot, never by colour alone. Swiping is left to List, which already has the correct physics and accessibility.",
+      "tier": "free",
+      "categories": [
+        "ai"
+      ],
+      "registryDependencies": [
+        "foundation"
+      ],
+      "variants": [
+        "default"
+      ],
+      "docs": "https://theswiftk.it.com/swiftui/conversation-row",
+      "url": "https://theswiftk.it.com/ui/r/sk-conversation-row.json"
+    }
+  ]
+}

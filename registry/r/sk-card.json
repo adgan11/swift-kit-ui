@@ -1,0 +1,56 @@
+{
+  "$schema": "https://theswiftk.it.com/ui/schema/registry-item.json",
+  "name": "sk-card",
+  "type": "registry:component",
+  "title": "Card",
+  "description": "A container with the kit's standard internal padding.",
+  "author": "Ahmed Gagan",
+  "tier": "free",
+  "platforms": {
+    "iOS": "17.0",
+    "macOS": "14.0"
+  },
+  "categories": [
+    "surfaces"
+  ],
+  "dependencies": [],
+  "registryDependencies": [
+    "foundation"
+  ],
+  "files": [
+    {
+      "path": "Sources/SwiftKitUI/Components/SKCard.swift",
+      "target": "SwiftKitUI/SKCard.swift",
+      "type": "registry:component",
+      "lines": 87,
+      "content": "//\n//  SKCard.swift\n//  Swift Kit UI\n//\n//  Requires: SwiftKitUI.swift\n//\n//  A container with the kit's standard internal padding.\n//\n//  This exists because \"just use .skSurface\" was not enough: every screen then\n//  picks its own padding and the cards drift apart by 2-4pt until nothing lines\n//  up. One card, one padding scale, everywhere.\n//\n//  Usage:\n//      SKCard { Text(\"Hello\") }\n//      SKCard(style: .elevated) { ... }\n//      SKCard(style: .liquidGlass) { ... } onTap: { open() }\n//\n\nimport SwiftUI\n\npublic struct SKCard<Content: View>: View {\n    private let style: SK.Surface\n    private let radius: CGFloat\n    private let padding: CGFloat\n    private let onTap: (() -> Void)?\n    private let content: Content\n\n    public init(\n        style: SK.Surface = .bordered,\n        radius: CGFloat = SK.Radius.lg,\n        padding: CGFloat = SK.Space.lg,\n        onTap: (() -> Void)? = nil,\n        @ViewBuilder content: () -> Content\n    ) {\n        self.style = style\n        self.radius = radius\n        self.padding = padding\n        self.onTap = onTap\n        self.content = content()\n    }\n\n    public var body: some View {\n        if let onTap {\n            // A real Button, not .onTapGesture \u2014 this is what gets VoiceOver,\n            // keyboard focus and pointer hover for free.\n            Button(action: onTap) { surface }\n                .buttonStyle(.skPress)\n        } else {\n            surface\n        }\n    }\n\n    private var surface: some View {\n        content\n            .padding(padding)\n            .frame(maxWidth: .infinity, alignment: .leading)\n            .skSurface(style, radius: radius)\n            .contentShape(.rect)\n    }\n}\n\n#Preview(\"SKCard\") {\n    ScrollView {\n        VStack(spacing: SK.Space.lg) {\n            SKCard {\n                VStack(alignment: .leading, spacing: SK.Space.xs) {\n                    Text(\"Bordered\").font(SK.Type_.headline)\n                    Text(\"The default. Quiet enough to stack.\")\n                        .font(SK.Type_.caption)\n                        .foregroundStyle(SK.Palette.labelSecondary)\n                }\n            }\n            SKCard(style: .elevated) {\n                Text(\"Elevated\").font(SK.Type_.headline)\n            }\n            SKCard(style: .liquidGlass) {\n                Text(\"Liquid Glass\").font(SK.Type_.headline)\n            }\n            SKCard(style: .elevated, onTap: {}) {\n                Text(\"Tappable \u2014 press me\").font(SK.Type_.headline)\n            }\n        }\n        .padding(SK.Space.lg)\n    }\n    .background(SK.Palette.surfaceSunken)\n}\n"
+    }
+  ],
+  "variants": [
+    {
+      "id": "bordered",
+      "title": "Bordered",
+      "tier": "free"
+    },
+    {
+      "id": "elevated",
+      "title": "Elevated",
+      "tier": "free"
+    },
+    {
+      "id": "liquid-glass",
+      "title": "Liquid Glass",
+      "tier": "free"
+    }
+  ],
+  "usage": "SKCard { Text(\"Hello\") }\nSKCard(style: .elevated) { ... }\nSKCard(style: .liquidGlass) { ... } onTap: { open() }",
+  "docs": "https://theswiftk.it.com/swiftui/card",
+  "keywords": [
+    "swiftui card view",
+    "swiftui card",
+    "ios card ui"
+  ],
+  "meta": {
+    "searchVolume": 320
+  }
+}

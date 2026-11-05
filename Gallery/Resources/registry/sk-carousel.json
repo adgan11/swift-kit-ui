@@ -1,0 +1,46 @@
+{
+  "$schema": "https://theswiftk.it.com/ui/schema/registry-item.json",
+  "name": "sk-carousel",
+  "type": "registry:component",
+  "title": "Carousel",
+  "description": "A snapping card carousel. Off-centre cards shrink and dim as they move away, which gives the row depth and makes the focused card unambiguous.",
+  "author": "Ahmed Gagan",
+  "tier": "free",
+  "platforms": {
+    "iOS": "17.0",
+    "macOS": "14.0"
+  },
+  "categories": [
+    "layout"
+  ],
+  "dependencies": [],
+  "registryDependencies": [
+    "foundation"
+  ],
+  "files": [
+    {
+      "path": "Sources/SwiftKitUI/Components/SKCarousel.swift",
+      "target": "SwiftKitUI/SKCarousel.swift",
+      "type": "registry:component",
+      "lines": 118,
+      "content": "//\n//  SKCarousel.swift\n//  Swift Kit UI\n//\n//  Requires: SwiftKitUI.swift\n//\n//  A snapping card carousel. Off-centre cards shrink and dim as they move away,\n//  which gives the row depth and makes the focused card unambiguous.\n//\n//  The depth effect uses `.scrollTransition`, so it is driven by real scroll\n//  position every frame rather than by a selected index \u2014 the cards respond\n//  continuously while your finger is still down.\n//\n//  Usage:\n//      SKCarousel(items: photos) { photo in PhotoCard(photo) }\n//\n\nimport SwiftUI\n\npublic struct SKCarousel<Item: Identifiable, Content: View>: View {\n    private let items: [Item]\n    private let cardWidth: CGFloat\n    private let height: CGFloat\n    private let content: (Item) -> Content\n\n    @State private var current: Item.ID?\n\n    public init(\n        items: [Item],\n        cardWidth: CGFloat = 260,\n        height: CGFloat = 320,\n        @ViewBuilder content: @escaping (Item) -> Content\n    ) {\n        self.items = items\n        self.cardWidth = cardWidth\n        self.height = height\n        self.content = content\n    }\n\n    public var body: some View {\n        VStack(spacing: SK.Space.lg) {\n            ScrollView(.horizontal, showsIndicators: false) {\n                HStack(spacing: SK.Space.lg) {\n                    ForEach(items) { item in\n                        content(item)\n                            .frame(width: cardWidth, height: height)\n                            .scrollTransition(axis: .horizontal) { view, phase in\n                                view\n                                    .scaleEffect(phase.isIdentity ? 1 : 0.88)\n                                    .opacity(phase.isIdentity ? 1 : 0.55)\n                                    .rotation3DEffect(\n                                        .degrees(phase.value * -8),\n                                        axis: (x: 0, y: 1, z: 0),\n                                        perspective: 0.5\n                                    )\n                            }\n                            .id(item.id)\n                    }\n                }\n                .scrollTargetLayout()\n                .padding(.horizontal, SK.Space.xl)\n            }\n            .scrollTargetBehavior(.viewAligned)\n            .scrollPosition(id: $current, anchor: .center)\n\n            indicator\n        }\n        .onAppear { current = items.first?.id }\n        .onChange(of: current) { _, _ in SK.Haptic.play(.light) }\n    }\n\n    private var indicator: some View {\n        HStack(spacing: SK.Space.xs) {\n            ForEach(items) { item in\n                let active = item.id == current\n                Capsule()\n                    .fill(active ? SK.Palette.accent : SK.Palette.separator)\n                    .frame(width: active ? 20 : 6, height: 6)\n                    .skAnimation(.snap, value: current)\n            }\n        }\n        .accessibilityHidden(true)\n    }\n}\n\nprivate struct DemoCard: Identifiable {\n    let id: Int\n    let title: String\n    let tint: Color\n}\n\n#Preview(\"SKCarousel\") {\n    let cards = [\n        DemoCard(id: 0, title: \"Components\", tint: .purple),\n        DemoCard(id: 1, title: \"Animations\", tint: .blue),\n        DemoCard(id: 2, title: \"Screens\", tint: .teal),\n        DemoCard(id: 3, title: \"Liquid Glass\", tint: .indigo),\n    ]\n\n    return SKCarousel(items: cards) { card in\n        VStack(alignment: .leading) {\n            Spacer()\n            Text(card.title)\n                .font(SK.Type_.title)\n                .foregroundStyle(.white)\n        }\n        .padding(SK.Space.xl)\n        .frame(maxWidth: .infinity, alignment: .leading)\n        .background {\n            LinearGradient(colors: [card.tint, card.tint.opacity(0.55)],\n                           startPoint: .topLeading, endPoint: .bottomTrailing)\n        }\n        .clipShape(RoundedRectangle(cornerRadius: SK.Radius.xl, style: .continuous))\n    }\n    .frame(maxWidth: .infinity, maxHeight: .infinity)\n    .background(SK.Palette.surfaceSunken)\n}\n"
+    }
+  ],
+  "variants": [
+    {
+      "id": "default",
+      "title": "Default",
+      "tier": "free"
+    }
+  ],
+  "usage": "SKCarousel(items: photos) { photo in PhotoCard(photo) }",
+  "docs": "https://theswiftk.it.com/swiftui/carousel",
+  "keywords": [
+    "swiftui carousel",
+    "ios carousel",
+    "swiftui paging scroll"
+  ],
+  "meta": {
+    "searchVolume": 70
+  }
+}

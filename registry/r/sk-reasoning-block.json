@@ -1,0 +1,49 @@
+{
+  "$schema": "https://theswiftk.it.com/ui/schema/registry-item.json",
+  "name": "sk-reasoning-block",
+  "type": "registry:component",
+  "title": "Reasoning Block",
+  "description": "The collapsible thinking disclosure, showing the line the model is currently on rather than a spinner. Collapsed it costs one line; expanded it is the full trace. When reasoning ends the header settles into the measured duration.",
+  "author": "Ahmed Gagan",
+  "tier": "free",
+  "platforms": {
+    "iOS": "17.0",
+    "macOS": "14.0"
+  },
+  "categories": [
+    "ai"
+  ],
+  "dependencies": [],
+  "registryDependencies": [
+    "foundation"
+  ],
+  "files": [
+    {
+      "path": "Sources/SwiftKitUI/Components/SKReasoningBlock.swift",
+      "target": "SwiftKitUI/SKReasoningBlock.swift",
+      "type": "registry:component",
+      "lines": 217,
+      "content": "//\n//  SKReasoningBlock.swift\n//  Swift Kit UI\n//\n//  Requires: SwiftKitUI.swift\n//\n//  The collapsible \"thinking\" disclosure, with the one detail that makes it\n//  worth having: while the model is reasoning, the block shows the line it is\n//  currently on.\n//\n//  A spinner labelled \"Thinking\u2026\" tells the user nothing and makes five seconds\n//  feel like thirty. A single line of the actual reasoning, replaced as it\n//  moves, turns dead time into something to read \u2014 and it is honest, because it\n//  is the real text rather than a progress fiction. Collapsed, it costs one\n//  line of layout; expanded, it is the full trace.\n//\n//  When reasoning ends the header settles into \"Thought for 4s\", because the\n//  duration is the part people actually want afterwards.\n//\n//  Usage:\n//      SKReasoningBlock(reasoning, isThinking: model.isReasoning)\n//      SKReasoningBlock(reasoning, isThinking: false, duration: 4.2)\n//\n\nimport SwiftUI\n\npublic struct SKReasoningBlock: View {\n    private let text: String\n    private let isThinking: Bool\n    private let providedDuration: TimeInterval?\n    private let title: String\n\n    @Environment(\\.accessibilityReduceMotion) private var reduceMotion\n    @State private var expanded = false\n    @State private var elapsed: TimeInterval = 0\n    @State private var settledDuration: TimeInterval?\n\n    public init(\n        _ text: String,\n        isThinking: Bool = false,\n        duration: TimeInterval? = nil,\n        title: String = \"Thinking\"\n    ) {\n        self.text = text\n        self.isThinking = isThinking\n        self.providedDuration = duration\n        self.title = title\n    }\n\n    /// The last non-empty line \u2014 what the model is working on right now.\n    private var currentLine: String {\n        text.components(separatedBy: .newlines)\n            .last { !$0.trimmingCharacters(in: .whitespaces).isEmpty }?\n            .trimmingCharacters(in: .whitespaces) ?? \"\"\n    }\n\n    private var shownDuration: TimeInterval? {\n        providedDuration ?? settledDuration\n    }\n\n    private var headerText: String {\n        if isThinking { return title }\n        if let shownDuration { return \"Thought for \\(format(shownDuration))\" }\n        return \"Reasoning\"\n    }\n\n    public var body: some View {\n        VStack(alignment: .leading, spacing: 0) {\n            header\n\n            if expanded {\n                Text(text.isEmpty ? \"No reasoning recorded.\" : text)\n                    .font(SK.Type_.callout)\n                    .foregroundStyle(SK.Palette.labelSecondary)\n                    .fixedSize(horizontal: false, vertical: true)\n                    .textSelection(.enabled)\n                    .frame(maxWidth: .infinity, alignment: .leading)\n                    .padding(.horizontal, SK.Space.md)\n                    .padding(.bottom, SK.Space.md)\n                    .transition(.opacity)\n            } else if isThinking && !currentLine.isEmpty {\n                livePreview\n            }\n        }\n        .background(SK.Palette.surfaceSunken, in: RoundedRectangle(cornerRadius: SK.Radius.md, style: .continuous))\n        .overlay {\n            RoundedRectangle(cornerRadius: SK.Radius.md, style: .continuous)\n                .strokeBorder(SK.Palette.separator, lineWidth: SK.Stroke.thin)\n        }\n        .skAnimation(.snap, value: expanded)\n        .skAnimation(.snap, value: isThinking)\n        .task(id: isThinking) {\n            guard isThinking else { return }\n            elapsed = 0\n            // Ticking at 10Hz rather than 60: the label shows tenths, so\n            // anything faster is work nobody can see.\n            while !Task.isCancelled {\n                try? await Task.sleep(for: .milliseconds(100))\n                elapsed += 0.1\n            }\n        }\n        .onChange(of: isThinking) { was, now in\n            // Freeze the measured time the moment reasoning stops, so the\n            // header keeps reporting it after the timer task is cancelled.\n            if was && !now { settledDuration = elapsed }\n        }\n    }\n\n    // MARK: Header\n\n    private var header: some View {\n        Button {\n            expanded.toggle()\n            SK.Haptic.play(.light)\n        } label: {\n            HStack(spacing: SK.Space.sm) {\n                Image(systemName: isThinking ? \"sparkles\" : \"checkmark.circle.fill\")\n                    .font(SK.Icon.symbol(SK.Icon.sm))\n                    .foregroundStyle(isThinking ? SK.Palette.accent : SK.Palette.labelTertiary)\n\n                Text(headerText)\n                    .font(SK.Type_.caption)\n                    .foregroundStyle(SK.Palette.labelSecondary)\n                    .skShimmer(isThinking && !reduceMotion)\n\n                if isThinking {\n                    Text(format(elapsed))\n                        .font(SK.Type_.caption)\n                        .monospacedDigit()\n                        .foregroundStyle(SK.Palette.labelTertiary)\n                }\n\n                Spacer(minLength: 0)\n\n                Image(systemName: \"chevron.down\")\n                    .font(SK.Icon.symbol(SK.Icon.xs, weight: .bold))\n                    .foregroundStyle(SK.Palette.labelTertiary)\n                    .rotationEffect(.degrees(expanded ? 180 : 0))\n                    .skAnimation(.snap, value: expanded)\n            }\n            .padding(.horizontal, SK.Space.md)\n            .padding(.vertical, SK.Space.sm + 2)\n            .contentShape(Rectangle())\n        }\n        .buttonStyle(.skPress(scale: 0.995, haptic: nil))\n        .accessibilityLabel(headerText)\n        .accessibilityHint(expanded ? \"Collapse reasoning\" : \"Expand reasoning\")\n    }\n\n    // MARK: Live line\n\n    private var livePreview: some View {\n        Text(currentLine)\n            .font(SK.Type_.caption)\n            .foregroundStyle(SK.Palette.labelTertiary)\n            .lineLimit(1)\n            .truncationMode(.tail)\n            .frame(maxWidth: .infinity, alignment: .leading)\n            .padding(.horizontal, SK.Space.md)\n            .padding(.bottom, SK.Space.md)\n            // Keyed on the text so each new line is a *different* view and can\n            // therefore transition. Without the id SwiftUI reuses the same\n            // Text and the content simply swaps with no movement at all.\n            .id(currentLine)\n            .transition(\n                reduceMotion\n                    ? .opacity\n                    : .push(from: .bottom).combined(with: .opacity)\n            )\n            .clipped()\n            .skAnimation(.snap, value: currentLine)\n            .accessibilityHidden(true)\n    }\n\n    private func format(_ seconds: TimeInterval) -> String {\n        seconds < 10\n            ? String(format: \"%.1fs\", max(0, seconds))\n            : String(format: \"%.0fs\", seconds)\n    }\n}\n\n#Preview(\"SKReasoningBlock\") {\n    @Previewable @State var trace = \"\"\n    @Previewable @State var thinking = true\n\n    let steps = [\n        \"Looking at the Q3 revenue table.\",\n        \"Annual plans are 61% of new subscriptions, up from 44%.\",\n        \"Checking whether monthly conversion moved at all.\",\n        \"Monthly is flat at 3.1% \u2014 so this is a mix shift, not demand.\",\n        \"Confirming churn: 1.8%, down from 2.4%.\",\n    ]\n\n    VStack(spacing: SK.Space.lg) {\n        SKReasoningBlock(trace, isThinking: thinking)\n\n        SKReasoningBlock(\n            steps.joined(separator: \"\\n\"),\n            isThinking: false,\n            duration: 4.2\n        )\n    }\n    .padding(SK.Space.lg)\n    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)\n    .background(SK.Palette.surface)\n    .task(id: trace.isEmpty) {\n        guard trace.isEmpty else { return }\n        thinking = true\n        for step in steps {\n            try? await Task.sleep(for: .milliseconds(1100))\n            trace += (trace.isEmpty ? \"\" : \"\\n\") + step\n        }\n        try? await Task.sleep(for: .milliseconds(600))\n        thinking = false\n    }\n}\n"
+    }
+  ],
+  "variants": [
+    {
+      "id": "thinking",
+      "title": "Thinking",
+      "tier": "free"
+    },
+    {
+      "id": "finished",
+      "title": "Finished",
+      "tier": "free"
+    }
+  ],
+  "usage": "SKReasoningBlock(reasoning, isThinking: model.isReasoning)\nSKReasoningBlock(reasoning, isThinking: false, duration: 4.2)",
+  "docs": "https://theswiftk.it.com/swiftui/reasoning-block",
+  "keywords": [
+    "swiftui reasoning ui",
+    "swiftui thinking indicator",
+    "swiftui collapsible disclosure",
+    "ai reasoning swiftui"
+  ]
+}

@@ -1,0 +1,51 @@
+{
+  "$schema": "https://theswiftk.it.com/ui/schema/registry-item.json",
+  "name": "sk-neumorphic-card",
+  "type": "registry:component",
+  "title": "Neumorphic Card",
+  "description": "Soft UI: two shadows, one light from the top-left and one dark from the bottom-right, so the surface appears extruded from its background.",
+  "author": "Ahmed Gagan",
+  "tier": "free",
+  "platforms": {
+    "iOS": "17.0",
+    "macOS": "14.0"
+  },
+  "categories": [
+    "surfaces"
+  ],
+  "dependencies": [],
+  "registryDependencies": [
+    "foundation"
+  ],
+  "files": [
+    {
+      "path": "Sources/SwiftKitUI/Components/SKNeumorphicCard.swift",
+      "target": "SwiftKitUI/SKNeumorphicCard.swift",
+      "type": "registry:component",
+      "lines": 119,
+      "content": "//\n//  SKNeumorphicCard.swift\n//  Swift Kit UI\n//\n//  Requires: SwiftKitUI.swift\n//\n//  Soft UI: two shadows, one light from the top-left and one dark from the\n//  bottom-right, so the surface appears extruded from its background.\n//\n//  Neumorphism only works when the card and its background are the SAME colour.\n//  If they differ the illusion collapses, which is why `background:` is a\n//  parameter here and not assumed \u2014 pass the colour the card is sitting on.\n//\n//  Usage:\n//      SKNeumorphicCard { Text(\"Raised\") }\n//      SKNeumorphicCard(style: .pressed) { Text(\"Inset\") }\n//\n\nimport SwiftUI\n\npublic struct SKNeumorphicCard<Content: View>: View {\n    public enum Style_: Sendable { case raised, pressed, flat }\n\n    private let style: Style_\n    private let background: Color\n    private let radius: CGFloat\n    private let padding: CGFloat\n    private let content: Content\n\n    public init(\n        style: Style_ = .raised,\n        background: Color = SK.Palette.surfaceSunken,\n        radius: CGFloat = SK.Radius.xl,\n        padding: CGFloat = SK.Space.xl,\n        @ViewBuilder content: () -> Content\n    ) {\n        self.style = style\n        self.background = background\n        self.radius = radius\n        self.padding = padding\n        self.content = content()\n    }\n\n    private var shape: RoundedRectangle {\n        RoundedRectangle(cornerRadius: radius, style: .continuous)\n    }\n\n    public var body: some View {\n        content\n            .padding(padding)\n            .background { surface }\n            .contentShape(shape)\n    }\n\n    @ViewBuilder\n    private var surface: some View {\n        switch style {\n        case .raised:\n            shape\n                .fill(background)\n                .shadow(color: .black.opacity(0.18), radius: 10, x: 6, y: 6)\n                .shadow(color: .white.opacity(0.65), radius: 10, x: -6, y: -6)\n        case .pressed:\n            // A true inner shadow needs a stroke blurred and clipped to the\n            // shape \u2014 SwiftUI has no inset shadow primitive.\n            shape\n                .fill(background)\n                .overlay {\n                    shape\n                        .stroke(Color.black.opacity(0.18), lineWidth: 5)\n                        .blur(radius: 5)\n                        .offset(x: 3, y: 3)\n                        .mask(shape.fill(LinearGradient(\n                            colors: [.black, .clear],\n                            startPoint: .topLeading, endPoint: .bottomTrailing\n                        )))\n                }\n                .overlay {\n                    shape\n                        .stroke(Color.white.opacity(0.7), lineWidth: 5)\n                        .blur(radius: 5)\n                        .offset(x: -3, y: -3)\n                        .mask(shape.fill(LinearGradient(\n                            colors: [.clear, .black],\n                            startPoint: .topLeading, endPoint: .bottomTrailing\n                        )))\n                }\n                .clipShape(shape)\n        case .flat:\n            shape.fill(background)\n        }\n    }\n}\n\n#Preview(\"SKNeumorphicCard\") {\n    let bg = SK.Palette.surfaceSunken\n\n    return VStack(spacing: SK.Space.xxl) {\n        SKNeumorphicCard(background: bg) {\n            Text(\"Raised\").font(SK.Type_.headline).foregroundStyle(SK.Palette.label)\n        }\n        SKNeumorphicCard(style: .pressed, background: bg) {\n            Text(\"Pressed\").font(SK.Type_.headline).foregroundStyle(SK.Palette.label)\n        }\n        HStack(spacing: SK.Space.lg) {\n            ForEach([\"play.fill\", \"pause.fill\", \"forward.fill\"], id: \\.self) { symbol in\n                SKNeumorphicCard(background: bg, radius: SK.Radius.pill, padding: SK.Space.lg) {\n                    Image(systemName: symbol)\n                        .font(SK.Icon.symbol(SK.Icon.md))\n                        .foregroundStyle(SK.Palette.accent)\n                }\n            }\n        }\n    }\n    .padding(SK.Space.xxl)\n    .frame(maxWidth: .infinity, maxHeight: .infinity)\n    .background(bg)\n}\n"
+    }
+  ],
+  "variants": [
+    {
+      "id": "raised",
+      "title": "Raised",
+      "tier": "free"
+    },
+    {
+      "id": "pressed",
+      "title": "Pressed",
+      "tier": "free"
+    }
+  ],
+  "usage": "SKNeumorphicCard { Text(\"Raised\") }\nSKNeumorphicCard(style: .pressed) { Text(\"Inset\") }",
+  "docs": "https://theswiftk.it.com/swiftui/neumorphism",
+  "keywords": [
+    "swiftui neumorphism",
+    "ios neumorphic design",
+    "soft ui swiftui"
+  ],
+  "meta": {
+    "searchVolume": 320
+  }
+}

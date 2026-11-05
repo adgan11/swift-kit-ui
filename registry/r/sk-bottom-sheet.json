@@ -1,0 +1,51 @@
+{
+  "$schema": "https://theswiftk.it.com/ui/schema/registry-item.json",
+  "name": "sk-bottom-sheet",
+  "type": "registry:component",
+  "title": "Bottom Sheet",
+  "description": "A draggable bottom sheet you can actually style \u2014 grabber, corner radius, backdrop and detents all yours.",
+  "author": "Ahmed Gagan",
+  "tier": "free",
+  "platforms": {
+    "iOS": "17.0",
+    "macOS": "14.0"
+  },
+  "categories": [
+    "overlays"
+  ],
+  "dependencies": [],
+  "registryDependencies": [
+    "foundation"
+  ],
+  "files": [
+    {
+      "path": "Sources/SwiftKitUI/Components/SKBottomSheet.swift",
+      "target": "SwiftKitUI/SKBottomSheet.swift",
+      "type": "registry:component",
+      "lines": 191,
+      "content": "//\n//  SKBottomSheet.swift\n//  Swift Kit UI\n//\n//  Requires: SwiftKitUI.swift\n//\n//  A draggable bottom sheet you can actually style \u2014 grabber, corner radius,\n//  backdrop and detents all yours.\n//\n//  TWO THINGS THAT ARE EASY TO GET WRONG, BOTH HANDLED HERE\n//  --------------------------------------------------------\n//  1. The sheet must RISE, not fade. A `.transition(.move(edge: .bottom))` only\n//     works if it is on a DIRECT child of the container carrying the animation.\n//     Wrap the sheet in a `GeometryReader` inside the `if`, and SwiftUI has no\n//     transition on the thing being inserted, so it cross-fades the whole\n//     container instead. Height comes from `containerRelativeFrame` precisely so\n//     no GeometryReader is needed.\n//  2. The drag must not be animated. An `.animation(_:value:)` anywhere above\n//     the offset re-times every frame of the gesture, which reads as snapping\n//     and lag. The animation here is scoped to `isPresented` alone; the drag\n//     offset is raw, and only the release is animated.\n//\n//  Usage:\n//      .skBottomSheet(isPresented: $show) { SheetContent() }\n//      .skBottomSheet(isPresented: $show, detent: .large) { ... }\n//\n\nimport SwiftUI\n\npublic enum SKSheetDetent: Sendable {\n    case small, medium, large\n\n    var fraction: CGFloat {\n        switch self {\n        case .small: 0.32\n        case .medium: 0.55\n        case .large: 0.88\n        }\n    }\n}\n\nprivate struct SKBottomSheetModifier<SheetContent: View>: ViewModifier {\n    @Binding var isPresented: Bool\n    let detent: SKSheetDetent\n    let showsGrabber: Bool\n    let sheetContent: SheetContent\n\n    @State private var drag: CGFloat = 0\n    @Environment(\\.accessibilityReduceMotion) private var reduceMotion\n\n    private var motion: Animation? {\n        SKMotion.settle.resolved(reduceMotion: reduceMotion)\n    }\n\n    func body(content: Content) -> some View {\n        ZStack(alignment: .bottom) {\n            content\n\n            if isPresented {\n                Color.black\n                    .opacity(0.35)\n                    .ignoresSafeArea()\n                    .transition(.opacity)\n                    .onTapGesture { close() }\n                    .zIndex(1)\n\n                // A direct child of the animated ZStack, so the move transition\n                // is the thing SwiftUI actually animates.\n                sheet\n                    .transition(.move(edge: .bottom))\n                    .zIndex(2)\n            }\n        }\n        // Scoped to isPresented ONLY. Widen this and the drag starts snapping.\n        .animation(motion, value: isPresented)\n    }\n\n    private var sheet: some View {\n        VStack(spacing: 0) {\n            if showsGrabber {\n                Capsule()\n                    .fill(SK.Palette.labelTertiary.opacity(0.6))\n                    .frame(width: 36, height: 5)\n                    .padding(.top, SK.Space.sm)\n                    .padding(.bottom, SK.Space.xs)\n                    .accessibilityHidden(true)\n            }\n\n            sheetContent\n                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)\n        }\n        .containerRelativeFrame(.vertical) { height, _ in height * detent.fraction }\n        .frame(maxWidth: .infinity)\n        .background {\n            UnevenRoundedRectangle(\n                topLeadingRadius: SK.Radius.xxl,\n                topTrailingRadius: SK.Radius.xxl,\n                style: .continuous\n            )\n            .fill(SK.Palette.surfaceElevated)\n            .ignoresSafeArea(edges: .bottom)\n            .shadow(color: .black.opacity(0.22), radius: 22, y: -6)\n        }\n        .offset(y: drag)\n        // Raw, unanimated during the gesture so the sheet tracks the finger.\n        .gesture(dragGesture)\n        .accessibilityAddTraits(.isModal)\n    }\n\n    private var dragGesture: some Gesture {\n        DragGesture()\n            .onChanged { g in\n                // 1:1 downward; heavily damped upward so the top feels like a\n                // limit rather than a wall.\n                drag = g.translation.height > 0\n                    ? g.translation.height\n                    : g.translation.height / 6\n            }\n            .onEnded { g in\n                // Projected, so a short fast flick dismisses like a long drag.\n                if g.predictedEndTranslation.height > 150 {\n                    close()\n                } else {\n                    withAnimation(motion) { drag = 0 }\n                }\n            }\n    }\n\n    private func close() {\n        SK.Haptic.play(.light)\n        withAnimation(motion) {\n            isPresented = false\n        }\n        // Reset AFTER the dismissal so the sheet does not jump back to its\n        // resting offset on the way out.\n        Task { @MainActor in\n            try? await Task.sleep(for: .milliseconds(420))\n            drag = 0\n        }\n    }\n}\n\nextension View {\n    public func skBottomSheet<SheetContent: View>(\n        isPresented: Binding<Bool>,\n        detent: SKSheetDetent = .medium,\n        showsGrabber: Bool = true,\n        @ViewBuilder content: () -> SheetContent\n    ) -> some View {\n        modifier(SKBottomSheetModifier(\n            isPresented: isPresented, detent: detent,\n            showsGrabber: showsGrabber, sheetContent: content()\n        ))\n    }\n}\n\n#Preview(\"SKBottomSheet\") {\n    @Previewable @State var medium = false\n    @Previewable @State var large = false\n\n    VStack(spacing: SK.Space.md) {\n        Button(\"Medium sheet\") { medium = true }\n        Button(\"Large sheet\") { large = true }\n    }\n    .font(SK.Type_.callout)\n    .foregroundStyle(SK.Palette.accent)\n    .frame(maxWidth: .infinity, maxHeight: .infinity)\n    .background(SK.Palette.surfaceSunken)\n    .skBottomSheet(isPresented: $medium) {\n        VStack(alignment: .leading, spacing: SK.Space.md) {\n            Text(\"Share\").font(SK.Type_.title).foregroundStyle(SK.Palette.label)\n            Text(\"Drag the grabber down, or flick, to dismiss.\")\n                .font(SK.Type_.callout).foregroundStyle(SK.Palette.labelSecondary)\n            Spacer()\n        }\n        .frame(maxWidth: .infinity, alignment: .leading)\n        .padding(SK.Space.xl)\n    }\n    .skBottomSheet(isPresented: $large, detent: .large) {\n        ScrollView {\n            VStack(alignment: .leading, spacing: SK.Space.md) {\n                ForEach(0..<14, id: \\.self) { i in\n                    Text(\"Row \\(i + 1)\").font(SK.Type_.body).foregroundStyle(SK.Palette.label)\n                }\n            }\n            .frame(maxWidth: .infinity, alignment: .leading)\n            .padding(SK.Space.xl)\n        }\n    }\n}\n"
+    }
+  ],
+  "variants": [
+    {
+      "id": "medium",
+      "title": "Medium",
+      "tier": "free"
+    },
+    {
+      "id": "large",
+      "title": "Large",
+      "tier": "free"
+    }
+  ],
+  "usage": ".skBottomSheet(isPresented: $show) { SheetContent() }\n.skBottomSheet(isPresented: $show, detent: .medium) { ... }",
+  "docs": "https://theswiftk.it.com/swiftui/sheet",
+  "keywords": [
+    "ios bottom sheet",
+    "swiftui bottom sheet",
+    "swiftui custom sheet"
+  ],
+  "meta": {
+    "searchVolume": 140
+  }
+}

@@ -1,0 +1,67 @@
+{
+  "$schema": "https://theswiftk.it.com/ui/schema/registry-item.json",
+  "name": "sk-button",
+  "type": "registry:component",
+  "title": "Button",
+  "description": "Five button roles on one interruptible press animation. The press uses a spring rather than a duration curve so a rapid double-tap does not queue up two animations and lag behind the finger \u2014 the second press retargets the first mid-flight.",
+  "author": "Ahmed Gagan",
+  "tier": "free",
+  "platforms": {
+    "iOS": "17.0",
+    "macOS": "14.0"
+  },
+  "categories": [
+    "actions"
+  ],
+  "dependencies": [],
+  "registryDependencies": [
+    "foundation"
+  ],
+  "files": [
+    {
+      "path": "Sources/SwiftKitUI/Components/SKButton.swift",
+      "target": "SwiftKitUI/SKButton.swift",
+      "type": "registry:component",
+      "lines": 170,
+      "content": "//\n//  SKButton.swift\n//  Swift Kit UI\n//\n//  Requires: SwiftKitUI.swift\n//\n//  Five button roles on one interruptible press animation. The press uses a\n//  spring rather than a duration curve so a rapid double-tap does not queue up\n//  two animations and lag behind the finger \u2014 the second press retargets the\n//  first mid-flight.\n//\n//  Usage:\n//      Button(\"Continue\") { }.buttonStyle(.sk)\n//      Button(\"Delete\") { }.buttonStyle(.sk(.destructive))\n//      Button(\"Buy\") { }.buttonStyle(.sk(.primary, loading: isLoading))\n//\n\nimport SwiftUI\n\npublic struct SKButtonStyle: ButtonStyle {\n    public enum Role: Sendable {\n        case primary\n        case secondary\n        case ghost\n        case destructive\n        case liquidGlass\n    }\n\n    private let role: Role\n    private let fullWidth: Bool\n    private let loading: Bool\n\n    public init(_ role: Role = .primary, fullWidth: Bool = true, loading: Bool = false) {\n        self.role = role\n        self.fullWidth = fullWidth\n        self.loading = loading\n    }\n\n    public func makeBody(configuration: Configuration) -> some View {\n        SKButtonBody(\n            configuration: configuration,\n            role: role,\n            fullWidth: fullWidth,\n            loading: loading\n        )\n    }\n}\n\nprivate struct SKButtonBody: View {\n    let configuration: ButtonStyleConfiguration\n    let role: SKButtonStyle.Role\n    let fullWidth: Bool\n    let loading: Bool\n\n    @Environment(\\.isEnabled) private var isEnabled\n\n    private var isInteractive: Bool { isEnabled && !loading }\n\n    var body: some View {\n        ZStack {\n            // The label stays in the layout while loading so the button does not\n            // resize when it starts \u2014 a resizing button mid-tap feels broken.\n            label\n                .opacity(loading ? 0 : 1)\n\n            if loading {\n                ProgressView()\n                    .progressViewStyle(.circular)\n                    .tint(foreground)\n                    .transition(.opacity.combined(with: .scale(scale: 0.85)))\n            }\n        }\n        .frame(maxWidth: fullWidth ? .infinity : nil)\n        .padding(.vertical, SK.Space.md + 2)\n        .padding(.horizontal, SK.Space.xl)\n        .background { background }\n        .clipShape(RoundedRectangle(cornerRadius: SK.Radius.md, style: .continuous))\n        .overlay { border }\n        .compositingGroup()\n        .scaleEffect(configuration.isPressed && isInteractive ? 0.97 : 1)\n        .opacity(isEnabled ? 1 : 0.45)\n        .skAnimation(.micro, value: configuration.isPressed)\n        .skAnimation(.snap, value: loading)\n        .contentShape(.rect)\n        .onChange(of: configuration.isPressed) { _, pressed in\n            // Fire on press-down, not on release. Feedback that arrives after\n            // the finger lifts reads as lag.\n            if pressed && isInteractive { SK.Haptic.play(.light) }\n        }\n        .accessibilityAddTraits(.isButton)\n        // Announce the busy state as a VALUE, not a label \u2014 overriding the\n        // label here would erase the button's own title for VoiceOver users.\n        .accessibilityValue(loading ? \"Loading\" : \"\")\n    }\n\n    private var label: some View {\n        configuration.label\n            .font(SK.Type_.headline)\n            .foregroundStyle(foreground)\n    }\n\n    @ViewBuilder\n    private var background: some View {\n        switch role {\n        case .primary:\n            SK.Palette.accent\n        case .secondary:\n            SK.Palette.fill\n        case .ghost:\n            Color.clear\n        case .destructive:\n            SK.Palette.danger\n        case .liquidGlass:\n            Color.clear.skSurface(.liquidGlass, radius: SK.Radius.md)\n        }\n    }\n\n    @ViewBuilder\n    private var border: some View {\n        let shape = RoundedRectangle(cornerRadius: SK.Radius.md, style: .continuous)\n        switch role {\n        case .secondary:\n            shape.strokeBorder(SK.Palette.separator, lineWidth: SK.Stroke.thin)\n        case .ghost:\n            shape.strokeBorder(SK.Palette.separator, lineWidth: SK.Stroke.thin)\n        default:\n            EmptyView()\n        }\n    }\n\n    private var foreground: Color {\n        switch role {\n        case .primary, .destructive: .white\n        case .secondary, .ghost, .liquidGlass: SK.Palette.label\n        }\n    }\n}\n\nextension ButtonStyle where Self == SKButtonStyle {\n    /// `Button(...).buttonStyle(.sk)`\n    public static var sk: SKButtonStyle { SKButtonStyle() }\n\n    /// `Button(...).buttonStyle(.sk(.secondary))`\n    public static func sk(\n        _ role: SKButtonStyle.Role,\n        fullWidth: Bool = true,\n        loading: Bool = false\n    ) -> SKButtonStyle {\n        SKButtonStyle(role, fullWidth: fullWidth, loading: loading)\n    }\n}\n\n#Preview(\"SKButton\") {\n    @Previewable @State var loading = false\n\n    VStack(spacing: SK.Space.md) {\n        Button(\"Primary\") { }.buttonStyle(.sk)\n        Button(\"Secondary\") { }.buttonStyle(.sk(.secondary))\n        Button(\"Ghost\") { }.buttonStyle(.sk(.ghost))\n        Button(\"Destructive\") { }.buttonStyle(.sk(.destructive))\n        Button(\"Liquid Glass\") { }.buttonStyle(.sk(.liquidGlass))\n        Button(\"Disabled\") { }.buttonStyle(.sk).disabled(true)\n        Button(\"Tap to load\") { loading.toggle() }\n            .buttonStyle(.sk(.primary, loading: loading))\n    }\n    .padding(SK.Space.xl)\n    .frame(maxWidth: .infinity, maxHeight: .infinity)\n    .background(SK.Palette.surfaceSunken)\n}\n"
+    }
+  ],
+  "variants": [
+    {
+      "id": "primary",
+      "title": "Primary",
+      "tier": "free"
+    },
+    {
+      "id": "secondary",
+      "title": "Secondary",
+      "tier": "free"
+    },
+    {
+      "id": "ghost",
+      "title": "Ghost",
+      "tier": "free"
+    },
+    {
+      "id": "destructive",
+      "title": "Destructive",
+      "tier": "free"
+    },
+    {
+      "id": "liquid-glass",
+      "title": "Liquid Glass",
+      "tier": "free"
+    }
+  ],
+  "usage": "Button(\"Continue\") { }.buttonStyle(.sk)\nButton(\"Delete\") { }.buttonStyle(.sk(.destructive))\nButton(\"Buy\") { }.buttonStyle(.sk(.primary, loading: isLoading))",
+  "docs": "https://theswiftk.it.com/swiftui/button",
+  "keywords": [
+    "swiftui button",
+    "swiftui buttonstyle",
+    "swiftui button style",
+    "ios button"
+  ],
+  "meta": {
+    "searchVolume": 3200
+  }
+}

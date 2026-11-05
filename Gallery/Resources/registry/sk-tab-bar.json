@@ -1,0 +1,52 @@
+{
+  "$schema": "https://theswiftk.it.com/ui/schema/registry-item.json",
+  "name": "sk-tab-bar",
+  "type": "registry:component",
+  "title": "Custom Tab Bar",
+  "description": "A custom tab bar where the selection indicator *travels* between tabs rather than cutting. That is `matchedGeometryEffect` doing the work: one pill exists at a time and SwiftUI interpolates its frame, which is both cheaper and smoother than animating an offset you calculate yourself.",
+  "author": "Ahmed Gagan",
+  "tier": "free",
+  "platforms": {
+    "iOS": "17.0",
+    "macOS": "14.0"
+  },
+  "categories": [
+    "navigation"
+  ],
+  "dependencies": [],
+  "registryDependencies": [
+    "foundation"
+  ],
+  "files": [
+    {
+      "path": "Sources/SwiftKitUI/Components/SKTabBar.swift",
+      "target": "SwiftKitUI/SKTabBar.swift",
+      "type": "registry:component",
+      "lines": 171,
+      "content": "//\n//  SKTabBar.swift\n//  Swift Kit UI\n//\n//  Requires: SwiftKitUI.swift\n//\n//  A custom tab bar where the selection indicator *travels* between tabs rather\n//  than cutting. That is `matchedGeometryEffect` doing the work: one pill exists\n//  at a time and SwiftUI interpolates its frame, which is both cheaper and\n//  smoother than animating an offset you calculate yourself.\n//\n//  Usage:\n//      SKTabBar(selection: $tab, tabs: [\n//          .init(tab: .home,    title: \"Home\",    systemImage: \"house.fill\"),\n//          .init(tab: .search,  title: \"Search\",  systemImage: \"magnifyingglass\"),\n//          .init(tab: .profile, title: \"Profile\", systemImage: \"person.fill\"),\n//      ])\n//\n\nimport SwiftUI\n\npublic struct SKTabItem<Tab: Hashable>: Identifiable {\n    public let tab: Tab\n    public let title: String\n    public let systemImage: String\n\n    public var id: Tab { tab }\n\n    public init(tab: Tab, title: String, systemImage: String) {\n        self.tab = tab\n        self.title = title\n        self.systemImage = systemImage\n    }\n}\n\npublic struct SKTabBar<Tab: Hashable>: View {\n    public enum Style: Sendable {\n        case floating\n        case liquidGlass\n    }\n\n    @Binding private var selection: Tab\n    private let tabs: [SKTabItem<Tab>]\n    private let style: Style\n    private let showsLabels: Bool\n\n    @Namespace private var pill\n    @Environment(\\.accessibilityReduceMotion) private var reduceMotion\n\n    public init(\n        selection: Binding<Tab>,\n        tabs: [SKTabItem<Tab>],\n        style: Style = .floating,\n        showsLabels: Bool = true\n    ) {\n        self._selection = selection\n        self.tabs = tabs\n        self.style = style\n        self.showsLabels = showsLabels\n    }\n\n    public var body: some View {\n        HStack(spacing: SK.Space.xxs) {\n            ForEach(tabs) { item in\n                tabButton(item)\n            }\n        }\n        .padding(SK.Space.xs)\n        .background { barBackground }\n        .clipShape(Capsule(style: .continuous))\n        .overlay {\n            if style == .floating {\n                Capsule(style: .continuous)\n                    .strokeBorder(SK.Palette.separator, lineWidth: SK.Stroke.hairline)\n            }\n        }\n        .shadow(color: .black.opacity(style == .floating ? 0.12 : 0), radius: 18, x: 0, y: 8)\n        .accessibilityElement(children: .contain)\n    }\n\n    private func tabButton(_ item: SKTabItem<Tab>) -> some View {\n        let isSelected = item.tab == selection\n\n        return Button {\n            guard !isSelected else { return }\n            withAnimation(SKMotion.snap.resolved(reduceMotion: reduceMotion)) {\n                selection = item.tab\n            }\n            SK.Haptic.play(.selection)\n        } label: {\n            HStack(spacing: SK.Space.xs) {\n                Image(systemName: item.systemImage)\n                    .font(SK.Icon.symbol(SK.Icon.md))\n                    // Bounces only the newly selected icon. `value:` is the\n                    // selection itself so deselection stays silent.\n                    .symbolEffect(.bounce, value: isSelected ? selection : nil)\n\n                if showsLabels && isSelected {\n                    Text(item.title)\n                        .font(SK.Type_.caption)\n                        .fixedSize()\n                        // Asymmetric on purpose: the label should appear with\n                        // the pill but leave instantly, otherwise two labels\n                        // are briefly visible mid-transition.\n                        .transition(AnyTransition.asymmetric(\n                            insertion: AnyTransition.opacity\n                                .combined(with: .scale(scale: 0.82, anchor: .leading)),\n                            removal: AnyTransition.opacity\n                        ))\n                }\n            }\n            .foregroundStyle(isSelected ? Color.white : SK.Palette.labelSecondary)\n            .padding(.vertical, SK.Space.sm + 2)\n            .padding(.horizontal, isSelected ? SK.Space.lg : SK.Space.md)\n            .background {\n                if isSelected {\n                    Capsule(style: .continuous)\n                        .fill(SK.Palette.accent)\n                        // One pill, moved by SwiftUI. Do not add a second.\n                        .matchedGeometryEffect(id: \"sk.tabbar.pill\", in: pill)\n                }\n            }\n            .contentShape(.rect)\n        }\n        .buttonStyle(.plain)\n        .accessibilityLabel(item.title)\n        .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : .isButton)\n    }\n\n    @ViewBuilder\n    private var barBackground: some View {\n        switch style {\n        case .floating:\n            SK.Palette.surfaceElevated\n        case .liquidGlass:\n            Color.clear.skSurface(.liquidGlass, radius: SK.Radius.pill)\n        }\n    }\n}\n\nprivate enum PreviewTab: Hashable { case home, search, saved, profile }\n\n#Preview(\"SKTabBar\") {\n    @Previewable @State var selection: PreviewTab = .home\n\n    VStack {\n        Spacer()\n        SKTabBar(selection: $selection, tabs: [\n            .init(tab: .home, title: \"Home\", systemImage: \"house.fill\"),\n            .init(tab: .search, title: \"Search\", systemImage: \"magnifyingglass\"),\n            .init(tab: .saved, title: \"Saved\", systemImage: \"bookmark.fill\"),\n            .init(tab: .profile, title: \"Profile\", systemImage: \"person.fill\"),\n        ])\n        Spacer().frame(height: SK.Space.xl)\n        SKTabBar(selection: $selection, tabs: [\n            .init(tab: .home, title: \"Home\", systemImage: \"house.fill\"),\n            .init(tab: .search, title: \"Search\", systemImage: \"magnifyingglass\"),\n            .init(tab: .saved, title: \"Saved\", systemImage: \"bookmark.fill\"),\n            .init(tab: .profile, title: \"Profile\", systemImage: \"person.fill\"),\n        ], style: .liquidGlass)\n        Spacer()\n    }\n    .frame(maxWidth: .infinity, maxHeight: .infinity)\n    .background(\n        LinearGradient(\n            colors: [SK.Palette.accentSoft, SK.Palette.surfaceSunken],\n            startPoint: .top, endPoint: .bottom\n        )\n    )\n}\n"
+    }
+  ],
+  "variants": [
+    {
+      "id": "floating",
+      "title": "Floating",
+      "tier": "free"
+    },
+    {
+      "id": "liquid-glass",
+      "title": "Liquid Glass",
+      "tier": "free"
+    }
+  ],
+  "usage": "SKTabBar(selection: $tab, tabs: [\n.init(tab: .home,    title: \"Home\",    systemImage: \"house.fill\"),\n.init(tab: .search,  title: \"Search\",  systemImage: \"magnifyingglass\"),\n.init(tab: .profile, title: \"Profile\", systemImage: \"person.fill\"),\n])",
+  "docs": "https://theswiftk.it.com/swiftui/custom-tab-bar",
+  "keywords": [
+    "swiftui custom tab bar",
+    "swiftui custom tabbar",
+    "ios tab bar",
+    "swiftui tabview"
+  ],
+  "meta": {
+    "searchVolume": 2870
+  }
+}

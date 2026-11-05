@@ -1,0 +1,54 @@
+{
+  "$schema": "https://theswiftk.it.com/ui/schema/registry-item.json",
+  "name": "sk-tool-call-card",
+  "type": "registry:component",
+  "title": "Tool Call Card",
+  "description": "Names the action an agent is taking while it takes it, with an indeterminate bar that proves the app is alive without pretending to measure progress. Running, success and failure states; arguments and results stay collapsed behind a disclosure.",
+  "author": "Ahmed Gagan",
+  "tier": "free",
+  "platforms": {
+    "iOS": "17.0",
+    "macOS": "14.0"
+  },
+  "categories": [
+    "ai"
+  ],
+  "dependencies": [],
+  "registryDependencies": [
+    "foundation"
+  ],
+  "files": [
+    {
+      "path": "Sources/SwiftKitUI/Components/SKToolCallCard.swift",
+      "target": "SwiftKitUI/SKToolCallCard.swift",
+      "type": "registry:component",
+      "lines": 244,
+      "content": "//\n//  SKToolCallCard.swift\n//  Swift Kit UI\n//\n//  Requires: SwiftKitUI.swift\n//\n//  What the agent is doing, while it does it.\n//\n//  An assistant that calls tools goes quiet at exactly the moment it is working\n//  hardest. Users read that silence as a hang, and the fix is not a spinner \u2014\n//  it is naming the action. \"Running `search_web`\" with a live bar is a\n//  different experience from three seconds of nothing, even though it is the\n//  same three seconds.\n//\n//  The tool name is set in monospace deliberately: it is an identifier, not\n//  prose, and rendering it as prose invites people to read it as a sentence.\n//  Arguments and results stay collapsed, because in the common case nobody\n//  wants them and in the debugging case nothing else will do.\n//\n//  Usage:\n//      SKToolCallCard(\"search_web\", summary: \"Q3 revenue\", state: .running)\n//      SKToolCallCard(\"read_file\", state: .success, detail: json, duration: 0.42)\n//\n\nimport SwiftUI\n\npublic enum SKToolCallState: Sendable, Hashable {\n    case running, success, failure\n}\n\npublic struct SKToolCallCard: View {\n    private let name: String\n    private let summary: String?\n    private let state: SKToolCallState\n    private let detail: String?\n    private let duration: TimeInterval?\n\n    @Environment(\\.accessibilityReduceMotion) private var reduceMotion\n    @State private var expanded = false\n    @State private var sweep: CGFloat = -1\n    @State private var pulse = false\n\n    public init(\n        _ name: String,\n        summary: String? = nil,\n        state: SKToolCallState = .running,\n        detail: String? = nil,\n        duration: TimeInterval? = nil\n    ) {\n        self.name = name\n        self.summary = summary\n        self.state = state\n        self.detail = detail\n        self.duration = duration\n    }\n\n    private var tint: Color {\n        switch state {\n        case .running: SK.Palette.accent\n        case .success: SK.Palette.success\n        case .failure: SK.Palette.danger\n        }\n    }\n\n    private var tintSoft: Color {\n        switch state {\n        case .running: SK.Palette.accentSoft\n        case .success: SK.Palette.successSoft\n        case .failure: SK.Palette.dangerSoft\n        }\n    }\n\n    private var symbol: String {\n        switch state {\n        case .running: \"wrench.and.screwdriver.fill\"\n        case .success: \"checkmark\"\n        case .failure: \"exclamationmark.triangle.fill\"\n        }\n    }\n\n    public var body: some View {\n        VStack(alignment: .leading, spacing: 0) {\n            Button {\n                guard detail != nil else { return }\n                expanded.toggle()\n                SK.Haptic.play(.light)\n            } label: {\n                headerRow\n            }\n            .buttonStyle(.skPress(scale: 0.995, haptic: nil))\n            .disabled(detail == nil)\n\n            if state == .running { progressBar }\n\n            if expanded, let detail {\n                ScrollView(.horizontal, showsIndicators: false) {\n                    Text(detail)\n                        .font(SK.Type_.monoCaption)\n                        .foregroundStyle(SK.Palette.labelSecondary)\n                        .textSelection(.enabled)\n                }\n                .padding(.horizontal, SK.Space.md)\n                .padding(.bottom, SK.Space.md)\n                .transition(.opacity)\n            }\n        }\n        .background(SK.Palette.surfaceElevated, in: RoundedRectangle(cornerRadius: SK.Radius.md, style: .continuous))\n        .overlay {\n            RoundedRectangle(cornerRadius: SK.Radius.md, style: .continuous)\n                .strokeBorder(state == .running ? tint.opacity(0.35) : SK.Palette.separator,\n                              lineWidth: SK.Stroke.thin)\n        }\n        .skAnimation(.snap, value: expanded)\n        .skAnimation(.settle, value: state)\n    }\n\n    private var headerRow: some View {\n        HStack(spacing: SK.Space.md) {\n            ZStack {\n                RoundedRectangle(cornerRadius: SK.Radius.sm, style: .continuous)\n                    .fill(tintSoft)\n                    .frame(width: 30, height: 30)\n                Image(systemName: symbol)\n                    .font(SK.Icon.symbol(SK.Icon.sm, weight: .bold))\n                    .foregroundStyle(tint)\n            }\n            // A slow breath rather than a spin: the card already has a\n            // progress bar, and two things moving at different rates in one\n            // 30pt square reads as noise.\n            .scaleEffect(pulse ? 1.06 : 1)\n            .opacity(pulse ? 1 : 0.82)\n\n            VStack(alignment: .leading, spacing: 1) {\n                Text(name)\n                    .font(SK.Type_.monoCaption)\n                    .foregroundStyle(SK.Palette.label)\n                    .lineLimit(1)\n                if let summary {\n                    Text(summary)\n                        .font(SK.Type_.caption)\n                        .foregroundStyle(SK.Palette.labelTertiary)\n                        .lineLimit(1)\n                }\n            }\n\n            Spacer(minLength: 0)\n\n            if let duration, state != .running {\n                Text(String(format: \"%.2fs\", duration))\n                    .font(SK.Type_.caption)\n                    .monospacedDigit()\n                    .foregroundStyle(SK.Palette.labelTertiary)\n            }\n\n            if detail != nil {\n                Image(systemName: \"chevron.down\")\n                    .font(SK.Icon.symbol(SK.Icon.xs, weight: .bold))\n                    .foregroundStyle(SK.Palette.labelTertiary)\n                    .rotationEffect(.degrees(expanded ? 180 : 0))\n                    .skAnimation(.snap, value: expanded)\n            }\n        }\n        .padding(SK.Space.md)\n        .contentShape(Rectangle())\n        .accessibilityElement(children: .combine)\n        .accessibilityLabel(\"Tool \\(name), \\(accessibilityState)\")\n    }\n\n    private var accessibilityState: String {\n        switch state {\n        case .running: \"running\"\n        case .success: \"completed\"\n        case .failure: \"failed\"\n        }\n    }\n\n    /// Indeterminate, because a tool call has no measurable progress. It exists\n    /// to prove the app is alive, which is a different job from reporting how\n    /// far along something is \u2014 so it never pretends to fill.\n    private var progressBar: some View {\n        GeometryReader { geo in\n            let width = geo.size.width\n            Capsule()\n                .fill(tint)\n                .frame(width: max(width * 0.34, 40))\n                .offset(x: reduceMotion ? width * 0.33 : sweep * width)\n                .opacity(reduceMotion ? 0.5 : 1)\n        }\n        .frame(height: 3)\n        .background(SK.Palette.fill)\n        .clipShape(Capsule())\n        .padding(.horizontal, SK.Space.md)\n        .padding(.bottom, SK.Space.md)\n        .onAppear {\n            guard !reduceMotion else { return }\n            sweep = -0.4\n            withAnimation(.easeInOut(duration: 1.15).repeatForever(autoreverses: false)) {\n                sweep = 1.05\n            }\n            withAnimation(.easeInOut(duration: 1.6).repeatForever(autoreverses: true)) {\n                pulse = true\n            }\n        }\n        .accessibilityHidden(true)\n    }\n}\n\n#Preview(\"SKToolCallCard\") {\n    @Previewable @State var state: SKToolCallState = .running\n\n    VStack(spacing: SK.Space.md) {\n        SKToolCallCard(\n            \"search_web\",\n            summary: \"q3 saas churn benchmarks 2026\",\n            state: state,\n            detail: #\"{ \"query\": \"q3 saas churn benchmarks 2026\", \"top_k\": 5 }\"#,\n            duration: 1.24\n        )\n\n        SKToolCallCard(\n            \"read_file\",\n            summary: \"Sources/Billing/Renewals.swift\",\n            state: .success,\n            detail: \"418 lines \u00b7 14.2 KB\",\n            duration: 0.42\n        )\n\n        SKToolCallCard(\n            \"run_query\",\n            summary: \"connection refused on replica-2\",\n            state: .failure,\n            detail: \"psql: error: connection to server at \\\"replica-2\\\" failed\",\n            duration: 8.01\n        )\n    }\n    .padding(SK.Space.lg)\n    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)\n    .background(SK.Palette.surface)\n    .task {\n        try? await Task.sleep(for: .seconds(3))\n        state = .success\n    }\n}\n"
+    }
+  ],
+  "variants": [
+    {
+      "id": "running",
+      "title": "Running",
+      "tier": "free"
+    },
+    {
+      "id": "success",
+      "title": "Success",
+      "tier": "free"
+    },
+    {
+      "id": "failure",
+      "title": "Failure",
+      "tier": "free"
+    }
+  ],
+  "usage": "SKToolCallCard(\"search_web\", summary: \"Q3 revenue\", state: .running)\nSKToolCallCard(\"read_file\", state: .success, detail: json, duration: 0.42)",
+  "docs": "https://theswiftk.it.com/swiftui/tool-call-card",
+  "keywords": [
+    "swiftui tool call ui",
+    "ai agent ui swiftui",
+    "swiftui function calling ui",
+    "swiftui status card"
+  ]
+}

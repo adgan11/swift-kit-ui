@@ -1,0 +1,46 @@
+{
+  "$schema": "https://theswiftk.it.com/ui/schema/registry-item.json",
+  "name": "sk-segmented-control",
+  "type": "registry:component",
+  "title": "Segmented Control",
+  "description": "The indicator slides between segments via matchedGeometryEffect rather than cutting. Same technique as the tab bar, deliberately \u2014 two controls that both express \"one of these is selected\" should move the same way.",
+  "author": "Ahmed Gagan",
+  "tier": "free",
+  "platforms": {
+    "iOS": "17.0",
+    "macOS": "14.0"
+  },
+  "categories": [
+    "controls"
+  ],
+  "dependencies": [],
+  "registryDependencies": [
+    "foundation"
+  ],
+  "files": [
+    {
+      "path": "Sources/SwiftKitUI/Components/SKSegmentedControl.swift",
+      "target": "SwiftKitUI/SKSegmentedControl.swift",
+      "type": "registry:component",
+      "lines": 90,
+      "content": "//\n//  SKSegmentedControl.swift\n//  Swift Kit UI\n//\n//  Requires: SwiftKitUI.swift\n//\n//  The indicator slides between segments via matchedGeometryEffect rather than\n//  cutting. Same technique as the tab bar, deliberately \u2014 two controls that\n//  both express \"one of these is selected\" should move the same way.\n//\n//  Usage:\n//      SKSegmentedControl(selection: $billing, options: Billing.allCases) { $0.title }\n//\n\nimport SwiftUI\n\npublic struct SKSegmentedControl<Option: Hashable>: View {\n    @Binding private var selection: Option\n    private let options: [Option]\n    private let title: (Option) -> String\n\n    @Namespace private var indicator\n    @Environment(\\.accessibilityReduceMotion) private var reduceMotion\n\n    public init(\n        selection: Binding<Option>,\n        options: [Option],\n        title: @escaping (Option) -> String\n    ) {\n        self._selection = selection\n        self.options = options\n        self.title = title\n    }\n\n    public var body: some View {\n        HStack(spacing: 0) {\n            ForEach(options, id: \\.self) { option in\n                segment(option)\n            }\n        }\n        .padding(SK.Space.xs)\n        .background(SK.Palette.fill, in: Capsule(style: .continuous))\n        .accessibilityElement(children: .contain)\n    }\n\n    private func segment(_ option: Option) -> some View {\n        let isSelected = option == selection\n        return Button {\n            guard !isSelected else { return }\n            withAnimation(SKMotion.snap.resolved(reduceMotion: reduceMotion)) {\n                selection = option\n            }\n            SK.Haptic.play(.selection)\n        } label: {\n            Text(title(option))\n                .font(SK.Type_.callout)\n                .foregroundStyle(isSelected ? SK.Palette.label : SK.Palette.labelSecondary)\n                .frame(maxWidth: .infinity)\n                .padding(.vertical, SK.Space.sm)\n                .background {\n                    if isSelected {\n                        Capsule(style: .continuous)\n                            .fill(SK.Palette.surfaceElevated)\n                            .shadow(color: .black.opacity(0.10), radius: 4, y: 1)\n                            .matchedGeometryEffect(id: \"sk.segment.indicator\", in: indicator)\n                    }\n                }\n                .contentShape(.rect)\n        }\n        .buttonStyle(.plain)\n        .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : .isButton)\n    }\n}\n\n#Preview(\"SKSegmentedControl\") {\n    @Previewable @State var billing = \"Annual\"\n    @Previewable @State var view = \"Grid\"\n\n    VStack(spacing: SK.Space.xl) {\n        SKSegmentedControl(selection: $billing, options: [\"Monthly\", \"Annual\"]) { $0 }\n        SKSegmentedControl(selection: $view, options: [\"List\", \"Grid\", \"Map\"]) { $0 }\n        Text(billing + \" / \" + view)\n            .font(SK.Type_.caption)\n            .foregroundStyle(SK.Palette.labelSecondary)\n    }\n    .padding(SK.Space.xl)\n    .frame(maxWidth: .infinity, maxHeight: .infinity)\n    .background(SK.Palette.surfaceSunken)\n}\n"
+    }
+  ],
+  "variants": [
+    {
+      "id": "default",
+      "title": "Default",
+      "tier": "free"
+    }
+  ],
+  "usage": "SKSegmentedControl(selection: $billing, options: Billing.allCases) { $0.title }",
+  "docs": "https://theswiftk.it.com/swiftui/segmented-control",
+  "keywords": [
+    "swiftui segmented control",
+    "ios segmented control",
+    "swiftui segmented picker"
+  ],
+  "meta": {
+    "searchVolume": 400
+  }
+}

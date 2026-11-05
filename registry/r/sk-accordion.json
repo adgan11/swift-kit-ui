@@ -1,0 +1,46 @@
+{
+  "$schema": "https://theswiftk.it.com/ui/schema/registry-item.json",
+  "name": "sk-accordion",
+  "type": "registry:component",
+  "title": "Accordion",
+  "description": "Expand/collapse with the chevron rotating on the same spring as the height change, so the two read as one movement instead of two.",
+  "author": "Ahmed Gagan",
+  "tier": "free",
+  "platforms": {
+    "iOS": "17.0",
+    "macOS": "14.0"
+  },
+  "categories": [
+    "layout"
+  ],
+  "dependencies": [],
+  "registryDependencies": [
+    "foundation"
+  ],
+  "files": [
+    {
+      "path": "Sources/SwiftKitUI/Components/SKAccordion.swift",
+      "target": "SwiftKitUI/SKAccordion.swift",
+      "type": "registry:component",
+      "lines": 135,
+      "content": "//\n//  SKAccordion.swift\n//  Swift Kit UI\n//\n//  Requires: SwiftKitUI.swift\n//\n//  Expand/collapse with the chevron rotating on the same spring as the height\n//  change, so the two read as one movement instead of two.\n//\n//  Usage:\n//      SKAccordion(\"What is included?\") { Text(\"Everything.\") }\n//      SKAccordion(\"Advanced\", isExpanded: $open) { ... }\n//\n\nimport SwiftUI\n\npublic struct SKAccordion<Content: View>: View {\n    private let title: String\n    private let systemImage: String?\n    private let content: Content\n\n    @Binding private var externalExpanded: Bool\n    @State private var internalExpanded: Bool\n    private let usesExternal: Bool\n\n    @Environment(\\.accessibilityReduceMotion) private var reduceMotion\n\n    private var isExpanded: Bool {\n        usesExternal ? externalExpanded : internalExpanded\n    }\n\n    public init(\n        _ title: String,\n        systemImage: String? = nil,\n        initiallyExpanded: Bool = false,\n        @ViewBuilder content: () -> Content\n    ) {\n        self.title = title\n        self.systemImage = systemImage\n        self.content = content()\n        self._externalExpanded = .constant(false)\n        self._internalExpanded = State(initialValue: initiallyExpanded)\n        self.usesExternal = false\n    }\n\n    public init(\n        _ title: String,\n        systemImage: String? = nil,\n        isExpanded: Binding<Bool>,\n        @ViewBuilder content: () -> Content\n    ) {\n        self.title = title\n        self.systemImage = systemImage\n        self.content = content()\n        self._externalExpanded = isExpanded\n        self._internalExpanded = State(initialValue: false)\n        self.usesExternal = true\n    }\n\n    public var body: some View {\n        VStack(spacing: 0) {\n            header\n            if isExpanded {\n                content\n                    .font(SK.Type_.callout)\n                    .foregroundStyle(SK.Palette.labelSecondary)\n                    .frame(maxWidth: .infinity, alignment: .leading)\n                    .padding(.horizontal, SK.Space.lg)\n                    .padding(.bottom, SK.Space.lg)\n                    // Opacity + a slight scale from the top edge, NOT\n                    // `.move(edge: .top)`. A move transition slides the content\n                    // up THROUGH the header \u2014 `.clipped()` on the VStack cannot\n                    // help, because the header is inside those same bounds.\n                    // The height change alone reads as the expansion.\n                    .transition(.opacity.combined(with: .scale(scale: 0.97, anchor: .top)))\n            }\n        }\n        .clipped()\n        .skSurface(.bordered, radius: SK.Radius.lg)\n        .skAnimation(.settle, value: isExpanded)\n    }\n\n    private var header: some View {\n        Button(action: toggle) {\n            HStack(spacing: SK.Space.md) {\n                if let systemImage {\n                    Image(systemName: systemImage)\n                        .font(SK.Icon.symbol(SK.Icon.md))\n                        .foregroundStyle(SK.Palette.accent)\n                }\n                Text(title)\n                    .font(SK.Type_.headline)\n                    .foregroundStyle(SK.Palette.label)\n                    .multilineTextAlignment(.leading)\n                Spacer(minLength: SK.Space.sm)\n                Image(systemName: \"chevron.down\")\n                    .font(SK.Icon.symbol(SK.Icon.sm, weight: .semibold))\n                    .foregroundStyle(SK.Palette.labelTertiary)\n                    .rotationEffect(.degrees(isExpanded ? 180 : 0))\n            }\n            .padding(SK.Space.lg)\n            .frame(minHeight: SK.Icon.hitTarget)\n            .contentShape(.rect)\n        }\n        .buttonStyle(.plain)\n        .accessibilityAddTraits(.isButton)\n        .accessibilityValue(isExpanded ? \"Expanded\" : \"Collapsed\")\n    }\n\n    private func toggle() {\n        SK.Haptic.play(.light)\n        withAnimation(SKMotion.settle.resolved(reduceMotion: reduceMotion)) {\n            if usesExternal { externalExpanded.toggle() } else { internalExpanded.toggle() }\n        }\n    }\n}\n\n#Preview(\"SKAccordion\") {\n    ScrollView {\n        VStack(spacing: SK.Space.md) {\n            SKAccordion(\"What is included?\", systemImage: \"shippingbox.fill\", initiallyExpanded: true) {\n                Text(\"Every component, every variant, the full source, and updates for a year.\")\n            }\n            SKAccordion(\"Can I use it commercially?\", systemImage: \"briefcase.fill\") {\n                Text(\"Yes. It is MIT licensed, so use it in any app.\")\n            }\n            SKAccordion(\"Which iOS versions?\", systemImage: \"iphone\") {\n                Text(\"iOS 17 and later. Liquid Glass falls back gracefully below iOS 26.\")\n            }\n        }\n        .padding(SK.Space.lg)\n    }\n    .background(SK.Palette.surfaceSunken)\n}\n"
+    }
+  ],
+  "variants": [
+    {
+      "id": "default",
+      "title": "Default",
+      "tier": "free"
+    }
+  ],
+  "usage": "SKAccordion(\"What is included?\") { Text(\"Everything.\") }\nSKAccordion(\"Advanced\", isExpanded: $open) { ... }",
+  "docs": "https://theswiftk.it.com/swiftui/accordion",
+  "keywords": [
+    "ios accordion",
+    "swiftui accordion",
+    "swiftui disclosure group"
+  ],
+  "meta": {
+    "searchVolume": 90
+  }
+}

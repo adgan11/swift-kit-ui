@@ -1,0 +1,46 @@
+{
+  "$schema": "https://theswiftk.it.com/ui/schema/registry-item.json",
+  "name": "sk-timeline",
+  "type": "registry:component",
+  "title": "Timeline",
+  "description": "A vertical timeline: order status, activity feeds, onboarding progress.",
+  "author": "Ahmed Gagan",
+  "tier": "free",
+  "platforms": {
+    "iOS": "17.0",
+    "macOS": "14.0"
+  },
+  "categories": [
+    "layout"
+  ],
+  "dependencies": [],
+  "registryDependencies": [
+    "foundation"
+  ],
+  "files": [
+    {
+      "path": "Sources/SwiftKitUI/Components/SKTimeline.swift",
+      "target": "SwiftKitUI/SKTimeline.swift",
+      "type": "registry:component",
+      "lines": 134,
+      "content": "//\n//  SKTimeline.swift\n//  Swift Kit UI\n//\n//  Requires: SwiftKitUI.swift\n//\n//  A vertical timeline: order status, activity feeds, onboarding progress.\n//\n//  The connector between two steps is drawn by the step above it and stops at\n//  the row's bottom edge, so the line never overshoots past the final node \u2014\n//  the giveaway of a hand-rolled timeline.\n//\n//  Usage:\n//      SKTimeline(steps: [\n//          .init(title: \"Ordered\", subtitle: \"Mon\", state: .done),\n//          .init(title: \"Shipped\", state: .current),\n//          .init(title: \"Delivered\", state: .upcoming),\n//      ])\n//\n\nimport SwiftUI\n\npublic struct SKTimelineStep: Identifiable {\n    public enum State_: Sendable { case done, current, upcoming, failed }\n\n    public let id = UUID()\n    public let title: String\n    public let subtitle: String?\n    public let state: State_\n\n    public init(title: String, subtitle: String? = nil, state: State_ = .upcoming) {\n        self.title = title\n        self.subtitle = subtitle\n        self.state = state\n    }\n\n    var tint: Color {\n        switch state {\n        case .done: SK.Palette.success\n        case .current: SK.Palette.accent\n        case .upcoming: SK.Palette.separator\n        case .failed: SK.Palette.danger\n        }\n    }\n\n    var symbol: String? {\n        switch state {\n        case .done: \"checkmark\"\n        case .failed: \"xmark\"\n        case .current, .upcoming: nil\n        }\n    }\n}\n\npublic struct SKTimeline: View {\n    private let steps: [SKTimelineStep]\n    private let nodeSize: CGFloat = 26\n\n    public init(steps: [SKTimelineStep]) { self.steps = steps }\n\n    public var body: some View {\n        VStack(alignment: .leading, spacing: 0) {\n            ForEach(Array(steps.enumerated()), id: \\.element.id) { index, step in\n                row(step, isLast: index == steps.count - 1)\n            }\n        }\n        .accessibilityElement(children: .contain)\n    }\n\n    private func row(_ step: SKTimelineStep, isLast: Bool) -> some View {\n        HStack(alignment: .top, spacing: SK.Space.md) {\n            VStack(spacing: 0) {\n                node(step)\n                if !isLast {\n                    Rectangle()\n                        .fill(step.state == .done ? SK.Palette.success : SK.Palette.separator)\n                        .frame(width: 2)\n                        .frame(maxHeight: .infinity)\n                }\n            }\n            .frame(width: nodeSize)\n\n            VStack(alignment: .leading, spacing: 2) {\n                Text(step.title)\n                    .font(SK.Type_.headline)\n                    .foregroundStyle(step.state == .upcoming ? SK.Palette.labelTertiary : SK.Palette.label)\n                if let subtitle = step.subtitle {\n                    Text(subtitle)\n                        .font(SK.Type_.caption)\n                        .foregroundStyle(SK.Palette.labelSecondary)\n                }\n            }\n            .padding(.bottom, isLast ? 0 : SK.Space.xl)\n\n            Spacer(minLength: 0)\n        }\n        .fixedSize(horizontal: false, vertical: true)\n        .accessibilityElement(children: .combine)\n    }\n\n    private func node(_ step: SKTimelineStep) -> some View {\n        ZStack {\n            Circle()\n                .fill(step.state == .upcoming ? SK.Palette.surface : step.tint)\n                .frame(width: nodeSize, height: nodeSize)\n            Circle()\n                .strokeBorder(step.tint, lineWidth: 2)\n                .frame(width: nodeSize, height: nodeSize)\n\n            if let symbol = step.symbol {\n                Image(systemName: symbol)\n                    .font(SK.Icon.symbol(SK.Icon.xs, weight: .bold))\n                    .foregroundStyle(.white)\n            } else if step.state == .current {\n                Circle()\n                    .fill(.white)\n                    .frame(width: 8, height: 8)\n            }\n        }\n    }\n}\n\n#Preview(\"SKTimeline\") {\n    SKTimeline(steps: [\n        .init(title: \"Order placed\", subtitle: \"Monday, 9:14\", state: .done),\n        .init(title: \"Payment confirmed\", subtitle: \"Monday, 9:15\", state: .done),\n        .init(title: \"Out for delivery\", subtitle: \"Arriving today\", state: .current),\n        .init(title: \"Delivered\", state: .upcoming),\n    ])\n    .padding(SK.Space.xl)\n    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)\n    .background(SK.Palette.surfaceSunken)\n}\n"
+    }
+  ],
+  "variants": [
+    {
+      "id": "default",
+      "title": "Default",
+      "tier": "free"
+    }
+  ],
+  "usage": "SKTimeline(steps: [\n.init(title: \"Ordered\", subtitle: \"Mon\", state: .done),\n.init(title: \"Shipped\", state: .current),\n.init(title: \"Delivered\", state: .upcoming),\n])",
+  "docs": "https://theswiftk.it.com/swiftui/timeline",
+  "keywords": [
+    "ios timeline view",
+    "swiftui timeline",
+    "swiftui step indicator"
+  ],
+  "meta": {
+    "searchVolume": 90
+  }
+}

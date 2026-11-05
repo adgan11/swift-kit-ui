@@ -1,0 +1,46 @@
+{
+  "$schema": "https://theswiftk.it.com/ui/schema/registry-item.json",
+  "name": "sk-color-swatch-picker",
+  "type": "registry:component",
+  "title": "Color Swatch Picker",
+  "description": "A swatch grid. Use this instead of the system ColorPicker when you have a fixed brand palette \u2014 an eyedropper and an infinite colour wheel are the wrong affordance for \"pick one of our eight accent colours\".",
+  "author": "Ahmed Gagan",
+  "tier": "free",
+  "platforms": {
+    "iOS": "17.0",
+    "macOS": "14.0"
+  },
+  "categories": [
+    "controls"
+  ],
+  "dependencies": [],
+  "registryDependencies": [
+    "foundation"
+  ],
+  "files": [
+    {
+      "path": "Sources/SwiftKitUI/Components/SKColorSwatchPicker.swift",
+      "target": "SwiftKitUI/SKColorSwatchPicker.swift",
+      "type": "registry:component",
+      "lines": 103,
+      "content": "//\n//  SKColorSwatchPicker.swift\n//  Swift Kit UI\n//\n//  Requires: SwiftKitUI.swift\n//\n//  A swatch grid. Use this instead of the system ColorPicker when you have a\n//  fixed brand palette \u2014 an eyedropper and an infinite colour wheel are the\n//  wrong affordance for \"pick one of our eight accent colours\".\n//\n//  Usage:\n//      SKColorSwatchPicker(selection: $accent, colors: brandColors)\n//\n\nimport SwiftUI\n\npublic struct SKColorSwatchPicker: View {\n    @Binding private var selection: Color\n    private let colors: [Color]\n    private let columns: Int\n    private let size: CGFloat\n\n    @Environment(\\.accessibilityReduceMotion) private var reduceMotion\n\n    public init(\n        selection: Binding<Color>,\n        colors: [Color],\n        columns: Int = 6,\n        size: CGFloat = 44\n    ) {\n        self._selection = selection\n        self.colors = colors\n        self.columns = columns\n        self.size = size\n    }\n\n    public var body: some View {\n        LazyVGrid(\n            columns: Array(repeating: GridItem(.flexible(), spacing: SK.Space.md), count: columns),\n            spacing: SK.Space.md\n        ) {\n            ForEach(Array(colors.enumerated()), id: \\.offset) { _, color in\n                swatch(color)\n            }\n        }\n        .accessibilityElement(children: .contain)\n    }\n\n    private func swatch(_ color: Color) -> some View {\n        let isSelected = color == selection\n        return Button {\n            withAnimation(SKMotion.pop.resolved(reduceMotion: reduceMotion)) {\n                selection = color\n            }\n            SK.Haptic.play(.selection)\n        } label: {\n            Circle()\n                .fill(color)\n                .frame(width: size, height: size)\n                .overlay {\n                    Circle().strokeBorder(.white.opacity(0.5), lineWidth: SK.Stroke.thin)\n                }\n                .overlay {\n                    if isSelected {\n                        Image(systemName: \"checkmark\")\n                            .font(SK.Icon.symbol(SK.Icon.sm, weight: .bold))\n                            .foregroundStyle(.white)\n                            .shadow(color: .black.opacity(0.35), radius: 2)\n                    }\n                }\n                // A ring outside the swatch rather than a border on it, so the\n                // colour being chosen is never altered by its own selection UI.\n                .overlay {\n                    Circle()\n                        .strokeBorder(SK.Palette.accent, lineWidth: isSelected ? 3 : 0)\n                        .padding(-5)\n                }\n                .scaleEffect(isSelected ? 1.06 : 1)\n                .contentShape(.circle)\n        }\n        .buttonStyle(.skPress(scale: 0.9, haptic: nil))\n        .skAnimation(.snap, value: isSelected)\n        .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : .isButton)\n    }\n}\n\n#Preview(\"SKColorSwatchPicker\") {\n    @Previewable @State var accent = Color.purple\n    let palette: [Color] = [.purple, .blue, .teal, .green, .yellow, .orange,\n                            .red, .pink, .indigo, .mint, .brown, .gray]\n\n    VStack(spacing: SK.Space.xl) {\n        SKColorSwatchPicker(selection: $accent, colors: palette)\n        RoundedRectangle(cornerRadius: SK.Radius.lg, style: .continuous)\n            .fill(accent)\n            .frame(height: 80)\n            .skAnimation(.settle, value: accent)\n    }\n    .padding(SK.Space.xl)\n    .frame(maxWidth: .infinity, maxHeight: .infinity)\n    .background(SK.Palette.surfaceSunken)\n}\n"
+    }
+  ],
+  "variants": [
+    {
+      "id": "default",
+      "title": "Default",
+      "tier": "free"
+    }
+  ],
+  "usage": "SKColorSwatchPicker(selection: $accent, colors: brandColors)",
+  "docs": "https://theswiftk.it.com/swiftui/color-picker",
+  "keywords": [
+    "ios color picker",
+    "swiftui color picker",
+    "swiftui color palette"
+  ],
+  "meta": {
+    "searchVolume": 530
+  }
+}

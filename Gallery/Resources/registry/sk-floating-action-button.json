@@ -1,0 +1,51 @@
+{
+  "$schema": "https://theswiftk.it.com/ui/schema/registry-item.json",
+  "name": "sk-floating-action-button",
+  "type": "registry:component",
+  "title": "Floating Action Button",
+  "description": "A FAB that fans out secondary actions when expanded.",
+  "author": "Ahmed Gagan",
+  "tier": "free",
+  "platforms": {
+    "iOS": "17.0",
+    "macOS": "14.0"
+  },
+  "categories": [
+    "actions"
+  ],
+  "dependencies": [],
+  "registryDependencies": [
+    "foundation"
+  ],
+  "files": [
+    {
+      "path": "Sources/SwiftKitUI/Components/SKFloatingActionButton.swift",
+      "target": "SwiftKitUI/SKFloatingActionButton.swift",
+      "type": "registry:component",
+      "lines": 143,
+      "content": "//\n//  SKFloatingActionButton.swift\n//  Swift Kit UI\n//\n//  Requires: SwiftKitUI.swift\n//\n//  A FAB that fans out secondary actions when expanded.\n//\n//  Actions animate out with a per-item delay so they arrive in sequence rather\n//  than all at once \u2014 staggering is the whole difference between \"menu opened\"\n//  and \"menu unfolded\". The main icon rotates 45 degrees to become a close\n//  affordance, so no second button is needed.\n//\n//  Usage:\n//      SKFloatingActionButton(actions: [\n//          .init(symbol: \"camera.fill\", title: \"Photo\") { },\n//          .init(symbol: \"mic.fill\", title: \"Audio\") { },\n//      ])\n//\n\nimport SwiftUI\n\npublic struct SKFABAction: Identifiable {\n    public let id = UUID()\n    public let symbol: String\n    public let title: String\n    public let handler: () -> Void\n\n    public init(symbol: String, title: String, handler: @escaping () -> Void) {\n        self.symbol = symbol\n        self.title = title\n        self.handler = handler\n    }\n}\n\npublic struct SKFloatingActionButton: View {\n    private let symbol: String\n    private let tint: Color\n    private let actions: [SKFABAction]\n    private let onTap: (() -> Void)?\n\n    @State private var isExpanded = false\n    @Environment(\\.accessibilityReduceMotion) private var reduceMotion\n\n    public init(\n        symbol: String = \"plus\",\n        tint: Color = SK.Palette.accent,\n        actions: [SKFABAction] = [],\n        onTap: (() -> Void)? = nil\n    ) {\n        self.symbol = symbol\n        self.tint = tint\n        self.actions = actions\n        self.onTap = onTap\n    }\n\n    public var body: some View {\n        VStack(alignment: .trailing, spacing: SK.Space.md) {\n            if isExpanded {\n                ForEach(Array(actions.enumerated()), id: \\.element.id) { index, action in\n                    actionRow(action)\n                        .transition(\n                            .move(edge: .bottom)\n                            .combined(with: .opacity)\n                            .combined(with: .scale(scale: 0.6, anchor: .bottomTrailing))\n                        )\n                        // Reversed so the item nearest the button leads.\n                        .animation(\n                            SKMotion.settle.resolved(reduceMotion: reduceMotion)?\n                                .delay(Double(actions.count - 1 - index) * 0.045),\n                            value: isExpanded\n                        )\n                }\n            }\n            mainButton\n        }\n    }\n\n    private var mainButton: some View {\n        Button {\n            if actions.isEmpty {\n                onTap?()\n                SK.Haptic.play(.medium)\n            } else {\n                withAnimation(SKMotion.settle.resolved(reduceMotion: reduceMotion)) {\n                    isExpanded.toggle()\n                }\n                SK.Haptic.play(.light)\n            }\n        } label: {\n            Image(systemName: symbol)\n                .font(SK.Icon.symbol(SK.Icon.lg, weight: .semibold))\n                .foregroundStyle(.white)\n                .frame(width: 58, height: 58)\n                .background(Circle().fill(tint))\n                .shadow(color: tint.opacity(0.4), radius: 12, y: 6)\n                .rotationEffect(.degrees(isExpanded ? 45 : 0))\n        }\n        .buttonStyle(.skPress(scale: 0.92, haptic: nil))\n        .skAnimation(.settle, value: isExpanded)\n        .accessibilityLabel(isExpanded ? \"Close menu\" : \"Actions\")\n    }\n\n    private func actionRow(_ action: SKFABAction) -> some View {\n        Button {\n            action.handler()\n            withAnimation(SKMotion.settle.resolved(reduceMotion: reduceMotion)) { isExpanded = false }\n            SK.Haptic.play(.light)\n        } label: {\n            HStack(spacing: SK.Space.md) {\n                Text(action.title)\n                    .font(SK.Type_.caption)\n                    .foregroundStyle(SK.Palette.label)\n                    .padding(.horizontal, SK.Space.md)\n                    .padding(.vertical, SK.Space.xs)\n                    .background(Capsule().fill(SK.Palette.surfaceElevated))\n                    .shadow(color: .black.opacity(0.12), radius: 6, y: 2)\n\n                Image(systemName: action.symbol)\n                    .font(SK.Icon.symbol(SK.Icon.md))\n                    .foregroundStyle(tint)\n                    .frame(width: 46, height: 46)\n                    .background(Circle().fill(SK.Palette.surfaceElevated))\n                    .shadow(color: .black.opacity(0.14), radius: 8, y: 3)\n            }\n        }\n        .buttonStyle(.skPress(scale: 0.94, haptic: nil))\n    }\n}\n\n#Preview(\"SKFloatingActionButton\") {\n    ZStack(alignment: .bottomTrailing) {\n        SK.Palette.surfaceSunken.ignoresSafeArea()\n\n        SKFloatingActionButton(actions: [\n            .init(symbol: \"camera.fill\", title: \"Photo\") {},\n            .init(symbol: \"mic.fill\", title: \"Audio\") {},\n            .init(symbol: \"doc.fill\", title: \"Document\") {},\n        ])\n        .padding(SK.Space.xl)\n    }\n}\n"
+    }
+  ],
+  "variants": [
+    {
+      "id": "menu",
+      "title": "Expandable",
+      "tier": "free"
+    },
+    {
+      "id": "single",
+      "title": "Single",
+      "tier": "free"
+    }
+  ],
+  "usage": "SKFloatingActionButton(actions: [\n.init(symbol: \"camera.fill\", title: \"Photo\") { },\n.init(symbol: \"mic.fill\", title: \"Audio\") { },\n])",
+  "docs": "https://theswiftk.it.com/swiftui/floating-action-button",
+  "keywords": [
+    "swiftui floating action button",
+    "ios fab",
+    "swiftui fab menu"
+  ],
+  "meta": {
+    "searchVolume": 60
+  }
+}

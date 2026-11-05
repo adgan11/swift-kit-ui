@@ -1,0 +1,46 @@
+{
+  "$schema": "https://theswiftk.it.com/ui/schema/registry-item.json",
+  "name": "sk-o-t-p-field",
+  "type": "registry:component",
+  "title": "OTPField",
+  "description": "One-time-code entry. A real hidden text field drives visible boxes, which is the only approach that keeps iOS SMS autofill working \u2014 per-box TextFields look right and then silently break the one feature that matters.",
+  "author": "Ahmed Gagan",
+  "tier": "free",
+  "platforms": {
+    "iOS": "17.0",
+    "macOS": "14.0"
+  },
+  "categories": [
+    "inputs"
+  ],
+  "dependencies": [],
+  "registryDependencies": [
+    "foundation"
+  ],
+  "files": [
+    {
+      "path": "Sources/SwiftKitUI/Components/SKOTPField.swift",
+      "target": "SwiftKitUI/SKOTPField.swift",
+      "type": "registry:component",
+      "lines": 147,
+      "content": "//\n//  SKOTPField.swift\n//  Swift Kit UI\n//\n//  Requires: SwiftKitUI.swift\n//\n//  One-time-code entry. A real hidden text field drives visible boxes, which is\n//  the only approach that keeps iOS SMS autofill working \u2014 per-box TextFields\n//  look right and then silently break the one feature that matters.\n//\n//  Usage:\n//      SKOTPField(code: $code) { verify($0) }\n//\n\nimport SwiftUI\n\npublic struct SKOTPField: View {\n    @Binding private var code: String\n    private let length: Int\n    private let isInvalid: Bool\n    private let onComplete: ((String) -> Void)?\n\n    @FocusState private var focused: Bool\n    @Environment(\\.accessibilityReduceMotion) private var reduceMotion\n\n    /// - Parameter isInvalid: flip to `true` after a rejected code to shake the\n    ///   boxes. Driven by state rather than by calling a method on the view \u2014\n    ///   a `View` is a value type, so an imperative `shake()` on it can never\n    ///   reach the live instance on screen.\n    public init(\n        code: Binding<String>,\n        length: Int = 6,\n        isInvalid: Bool = false,\n        onComplete: ((String) -> Void)? = nil\n    ) {\n        self._code = code\n        self.length = length\n        self.isInvalid = isInvalid\n        self.onComplete = onComplete\n    }\n\n    public var body: some View {\n        ZStack {\n            hiddenInput\n            boxes\n        }\n        .contentShape(.rect)\n        .onTapGesture { focused = true }\n        .keyframeAnimator(initialValue: CGFloat.zero, trigger: isInvalid) { view, offset in\n            view.offset(x: offset)\n        } keyframes: { _ in\n            // Decaying oscillation. Skipped entirely under Reduce Motion by\n            // collapsing to a single zero keyframe.\n            if reduceMotion {\n                CubicKeyframe(0, duration: 0.01)\n            } else {\n                CubicKeyframe(-10, duration: 0.06)\n                CubicKeyframe(10, duration: 0.08)\n                CubicKeyframe(-6, duration: 0.08)\n                CubicKeyframe(4, duration: 0.07)\n                CubicKeyframe(0, duration: 0.06)\n            }\n        }\n        .onChange(of: isInvalid) { _, invalid in\n            if invalid { SK.Haptic.play(.error) }\n        }\n        .accessibilityElement()\n        .accessibilityLabel(\"Verification code\")\n        .accessibilityValue(code.isEmpty ? \"Empty\" : code.map(String.init).joined(separator: \" \"))\n    }\n\n    /// Invisible but still a real, focusable field \u2014 `.opacity(0)` alone would\n    /// make it unfocusable on some iOS versions, hence the tiny frame.\n    private var hiddenInput: some View {\n        TextField(\"\", text: $code)\n            .skKeyboard(.number)\n            .skOneTimeCode()\n            .focused($focused)\n            .frame(width: 1, height: 1)\n            .opacity(0.001)\n            .onChange(of: code) { _, new in\n                let digits = String(new.filter(\\.isNumber).prefix(length))\n                if digits != new { code = digits }\n                if digits.count == length {\n                    focused = false\n                    SK.Haptic.play(.success)\n                    onComplete?(digits)\n                } else if !digits.isEmpty {\n                    SK.Haptic.play(.light)\n                }\n            }\n    }\n\n    private var boxes: some View {\n        HStack(spacing: SK.Space.sm) {\n            ForEach(0..<length, id: \\.self) { index in\n                box(at: index)\n            }\n        }\n    }\n\n    private func box(at index: Int) -> some View {\n        let characters = Array(code)\n        let filled = index < characters.count\n        let isNext = index == characters.count && focused\n\n        return Text(filled ? String(characters[index]) : \"\")\n            .font(SK.Type_.numeric)\n            .foregroundStyle(SK.Palette.label)\n            .frame(width: 46, height: 56)\n            .background(SK.Palette.surface, in: RoundedRectangle(cornerRadius: SK.Radius.md, style: .continuous))\n            .overlay {\n                RoundedRectangle(cornerRadius: SK.Radius.md, style: .continuous)\n                    .strokeBorder(\n                        isInvalid ? SK.Palette.danger\n                            : (isNext ? SK.Palette.accent : SK.Palette.separator),\n                        lineWidth: isInvalid || isNext ? SK.Stroke.thick : SK.Stroke.thin\n                    )\n            }\n            .scaleEffect(isNext ? 1.04 : 1)\n            .skAnimation(.snap, value: code)\n            .skAnimation(.snap, value: focused)\n    }\n\n}\n\n#Preview(\"SKOTPField\") {\n    @Previewable @State var code = \"\"\n    @Previewable @State var invalid = false\n\n    VStack(spacing: SK.Space.xl) {\n        Text(\"Enter the 6-digit code\")\n            .font(SK.Type_.headline)\n            .foregroundStyle(SK.Palette.label)\n        SKOTPField(code: $code, isInvalid: invalid) { entered in\n            // Anything but 123456 is rejected, so the shake is demonstrable.\n            invalid = entered != \"123456\"\n        }\n        Text(invalid ? \"That code is not right.\" : \"Try 123456\")\n            .font(SK.Type_.caption)\n            .foregroundStyle(invalid ? SK.Palette.danger : SK.Palette.labelTertiary)\n    }\n    .padding(SK.Space.xl)\n    .frame(maxWidth: .infinity, maxHeight: .infinity)\n    .background(SK.Palette.surfaceSunken)\n}\n"
+    }
+  ],
+  "variants": [
+    {
+      "id": "default",
+      "title": "Default",
+      "tier": "free"
+    }
+  ],
+  "usage": "SKOTPField(code: $code) { verify($0) }",
+  "docs": "https://theswiftk.it.com/swiftui/o-t-p-field",
+  "keywords": [
+    "swiftui otp",
+    "swiftui verification code",
+    "ios one time code"
+  ],
+  "meta": {
+    "searchVolume": 90
+  }
+}

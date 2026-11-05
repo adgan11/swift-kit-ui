@@ -1,0 +1,51 @@
+{
+  "$schema": "https://theswiftk.it.com/ui/schema/registry-item.json",
+  "name": "sk-badge",
+  "type": "registry:component",
+  "title": "Badge",
+  "description": "A small status pill.",
+  "author": "Ahmed Gagan",
+  "tier": "free",
+  "platforms": {
+    "iOS": "17.0",
+    "macOS": "14.0"
+  },
+  "categories": [
+    "feedback"
+  ],
+  "dependencies": [],
+  "registryDependencies": [
+    "foundation"
+  ],
+  "files": [
+    {
+      "path": "Sources/SwiftKitUI/Components/SKBadge.swift",
+      "target": "SwiftKitUI/SKBadge.swift",
+      "type": "registry:component",
+      "lines": 94,
+      "content": "//\n//  SKBadge.swift\n//  Swift Kit UI\n//\n//  Requires: SwiftKitUI.swift\n//\n//  A small status pill.\n//\n//  Tones resolve to real tinted colours from the palette rather than\n//  `.opacity()` on a solid \u2014 opacity composites against whatever is behind it,\n//  so the same badge drifts in appearance from screen to screen.\n//\n//  Usage:\n//      SKBadge(\"New\")\n//      SKBadge(\"Pro\", tone: .accent)\n//      SKBadge(\"3\", tone: .danger, shape: .circle)\n//\n\nimport SwiftUI\n\npublic struct SKBadge: View {\n    public enum Tone: Sendable {\n        case neutral, accent, success, warning, danger\n\n        var foreground: Color {\n            switch self {\n            case .neutral: SK.Palette.labelSecondary\n            case .accent: SK.Palette.accent\n            case .success: SK.Palette.success\n            case .warning: SK.Palette.warning\n            case .danger: SK.Palette.danger\n            }\n        }\n\n        var background: Color {\n            switch self {\n            case .neutral: SK.Palette.fill\n            case .accent: SK.Palette.accentSoft\n            case .success: SK.Palette.successSoft\n            case .warning: SK.Palette.warningSoft\n            case .danger: SK.Palette.dangerSoft\n            }\n        }\n    }\n\n    public enum Shape_: Sendable { case capsule, circle }\n\n    private let text: String\n    private let tone: Tone\n    private let shape: Shape_\n    private let systemImage: String?\n\n    public init(_ text: String, tone: Tone = .neutral, shape: Shape_ = .capsule, systemImage: String? = nil) {\n        self.text = text\n        self.tone = tone\n        self.shape = shape\n        self.systemImage = systemImage\n    }\n\n    public var body: some View {\n        HStack(spacing: SK.Space.xxs) {\n            if let systemImage {\n                Image(systemName: systemImage).font(SK.Icon.symbol(SK.Icon.xs))\n            }\n            Text(text)\n        }\n        .font(SK.Type_.caption)\n        .foregroundStyle(tone.foreground)\n        .padding(.horizontal, shape == .circle ? SK.Space.xs : SK.Space.sm)\n        .padding(.vertical, SK.Space.xxs)\n        .frame(minWidth: shape == .circle ? 22 : nil)\n        .background(Capsule().fill(tone.background))\n        .accessibilityElement(children: .combine)\n    }\n}\n\n#Preview(\"SKBadge\") {\n    VStack(spacing: SK.Space.lg) {\n        HStack(spacing: SK.Space.sm) {\n            SKBadge(\"Neutral\")\n            SKBadge(\"Accent\", tone: .accent)\n            SKBadge(\"Success\", tone: .success, systemImage: \"checkmark\")\n        }\n        HStack(spacing: SK.Space.sm) {\n            SKBadge(\"Warning\", tone: .warning, systemImage: \"exclamationmark.triangle.fill\")\n            SKBadge(\"Danger\", tone: .danger)\n            SKBadge(\"3\", tone: .danger, shape: .circle)\n        }\n    }\n    .padding(SK.Space.xl)\n    .frame(maxWidth: .infinity, maxHeight: .infinity)\n    .background(SK.Palette.surfaceSunken)\n}\n"
+    }
+  ],
+  "variants": [
+    {
+      "id": "capsule",
+      "title": "Capsule",
+      "tier": "free"
+    },
+    {
+      "id": "circle",
+      "title": "Circle",
+      "tier": "free"
+    }
+  ],
+  "usage": "SKBadge(\"New\")\nSKBadge(\"Pro\", tone: .accent)\nSKBadge(\"3\", tone: .danger, shape: .circle)",
+  "docs": "https://theswiftk.it.com/swiftui/badge",
+  "keywords": [
+    "ios badge",
+    "swiftui badge",
+    "swiftui pill"
+  ],
+  "meta": {
+    "searchVolume": 480
+  }
+}

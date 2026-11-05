@@ -1,0 +1,62 @@
+{
+  "$schema": "https://theswiftk.it.com/ui/schema/registry-item.json",
+  "name": "sk-toast",
+  "type": "registry:component",
+  "title": "Toast",
+  "description": "A transient message, presented as a modifier so it overlays the whole screen instead of being wedged into your layout.",
+  "author": "Ahmed Gagan",
+  "tier": "free",
+  "platforms": {
+    "iOS": "17.0",
+    "macOS": "14.0"
+  },
+  "categories": [
+    "feedback"
+  ],
+  "dependencies": [],
+  "registryDependencies": [
+    "foundation"
+  ],
+  "files": [
+    {
+      "path": "Sources/SwiftKitUI/Components/SKToast.swift",
+      "target": "SwiftKitUI/SKToast.swift",
+      "type": "registry:component",
+      "lines": 146,
+      "content": "//\n//  SKToast.swift\n//  Swift Kit UI\n//\n//  Requires: SwiftKitUI.swift\n//\n//  A transient message, presented as a modifier so it overlays the whole screen\n//  instead of being wedged into your layout.\n//\n//  Swipe up to dismiss early. The auto-dismiss timer is a Task tied to the\n//  toast's identity, so replacing a toast cancels the previous timer \u2014 without\n//  that, a rapid second toast inherits the first one's countdown and vanishes\n//  almost immediately.\n//\n//  Usage:\n//      .skToast($toast)\n//      toast = SKToast(\"Saved\", style: .success)\n//\n\nimport SwiftUI\n\npublic struct SKToast: Equatable, Identifiable, Sendable {\n    public enum Style: Sendable {\n        case info, success, warning, error\n\n        var tint: Color {\n            switch self {\n            case .info: SK.Palette.accent\n            case .success: SK.Palette.success\n            case .warning: SK.Palette.warning\n            case .error: SK.Palette.danger\n            }\n        }\n\n        var symbol: String {\n            switch self {\n            case .info: \"info.circle.fill\"\n            case .success: \"checkmark.circle.fill\"\n            case .warning: \"exclamationmark.triangle.fill\"\n            case .error: \"xmark.octagon.fill\"\n            }\n        }\n\n        var haptic: SK.Haptic.Style {\n            switch self {\n            case .info: .light\n            case .success: .success\n            case .warning: .warning\n            case .error: .error\n            }\n        }\n    }\n\n    public let id = UUID()\n    public let message: String\n    public let style: Style\n    public let duration: Double\n\n    public init(_ message: String, style: Style = .info, duration: Double = 2.4) {\n        self.message = message\n        self.style = style\n        self.duration = duration\n    }\n\n    public static func == (a: SKToast, b: SKToast) -> Bool { a.id == b.id }\n}\n\npublic enum SKToastEdge: Sendable { case top, bottom }\n\nprivate struct SKToastModifier: ViewModifier {\n    @Binding var toast: SKToast?\n    let edge: SKToastEdge\n\n    func body(content: Content) -> some View {\n        content\n            .overlay(alignment: edge == .top ? .top : .bottom) {\n                if let toast {\n                    banner(toast)\n                        .padding(.horizontal, SK.Space.lg)\n                        .padding(edge == .top ? .top : .bottom, SK.Space.sm)\n                        .transition(.move(edge: edge == .top ? .top : .bottom)\n                            .combined(with: .opacity))\n                }\n            }\n            .skAnimation(.settle, value: toast)\n            // Keyed on the toast id: a new toast starts a fresh timer and the\n            // old one is cancelled automatically.\n            .task(id: toast?.id) {\n                guard let current = toast else { return }\n                SK.Haptic.play(current.style.haptic)\n                try? await Task.sleep(for: .seconds(current.duration))\n                guard !Task.isCancelled else { return }\n                toast = nil\n            }\n    }\n\n    private func banner(_ toast: SKToast) -> some View {\n        HStack(spacing: SK.Space.md) {\n            Image(systemName: toast.style.symbol)\n                .font(SK.Icon.symbol(SK.Icon.md))\n                .foregroundStyle(toast.style.tint)\n            Text(toast.message)\n                .font(SK.Type_.callout)\n                .foregroundStyle(SK.Palette.label)\n                .fixedSize(horizontal: false, vertical: true)\n            Spacer(minLength: 0)\n        }\n        .padding(.horizontal, SK.Space.lg)\n        .padding(.vertical, SK.Space.md)\n        .skSurface(.elevated, radius: SK.Radius.lg)\n        .gesture(\n            DragGesture(minimumDistance: 8).onEnded { g in\n                let dismissed = edge == .top ? g.translation.height < -20 : g.translation.height > 20\n                if dismissed { self.toast = nil }\n            }\n        )\n        .accessibilityElement(children: .combine)\n        .accessibilityAddTraits(.isStaticText)\n    }\n}\n\nextension View {\n    /// Presents `toast` over this view, auto-dismissing after its duration.\n    public func skToast(_ toast: Binding<SKToast?>, edge: SKToastEdge = .top) -> some View {\n        modifier(SKToastModifier(toast: toast, edge: edge))\n    }\n}\n\n#Preview(\"SKToast\") {\n    @Previewable @State var toast: SKToast?\n\n    VStack(spacing: SK.Space.md) {\n        Button(\"Info\") { toast = SKToast(\"Synced 42 items\") }\n        Button(\"Success\") { toast = SKToast(\"Saved\", style: .success) }\n        Button(\"Warning\") { toast = SKToast(\"Running low on space\", style: .warning) }\n        Button(\"Error\") { toast = SKToast(\"Could not connect\", style: .error) }\n    }\n    .buttonStyle(.skPress)\n    .font(SK.Type_.callout)\n    .foregroundStyle(SK.Palette.accent)\n    .padding(SK.Space.xl)\n    .frame(maxWidth: .infinity, maxHeight: .infinity)\n    .background(SK.Palette.surfaceSunken)\n    .skToast($toast)\n}\n"
+    }
+  ],
+  "variants": [
+    {
+      "id": "info",
+      "title": "Info",
+      "tier": "free"
+    },
+    {
+      "id": "success",
+      "title": "Success",
+      "tier": "free"
+    },
+    {
+      "id": "warning",
+      "title": "Warning",
+      "tier": "free"
+    },
+    {
+      "id": "error",
+      "title": "Error",
+      "tier": "free"
+    }
+  ],
+  "usage": ".skToast($toast)\ntoast = SKToast(\"Saved\", style: .success)",
+  "docs": "https://theswiftk.it.com/swiftui/toast",
+  "keywords": [
+    "ios toast",
+    "swiftui toast",
+    "swiftui snackbar",
+    "swiftui banner"
+  ],
+  "meta": {
+    "searchVolume": 270
+  }
+}

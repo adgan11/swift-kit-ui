@@ -1,0 +1,52 @@
+{
+  "$schema": "https://theswiftk.it.com/ui/schema/registry-item.json",
+  "name": "sk-toggle",
+  "type": "registry:component",
+  "title": "Toggle",
+  "description": "A toggle you can *drag*, not just tap. That one detail is most of why the system switch feels expensive and a hand-rolled one usually does not \u2014 the knob tracks your finger, squashes while held, and commits on release using gesture velocity rather than a naive midpoint test.",
+  "author": "Ahmed Gagan",
+  "tier": "free",
+  "platforms": {
+    "iOS": "17.0",
+    "macOS": "14.0"
+  },
+  "categories": [
+    "controls"
+  ],
+  "dependencies": [],
+  "registryDependencies": [
+    "foundation"
+  ],
+  "files": [
+    {
+      "path": "Sources/SwiftKitUI/Components/SKToggle.swift",
+      "target": "SwiftKitUI/SKToggle.swift",
+      "type": "registry:component",
+      "lines": 214,
+      "content": "//\n//  SKToggle.swift\n//  Swift Kit UI\n//\n//  Requires: SwiftKitUI.swift\n//\n//  A toggle you can *drag*, not just tap. That one detail is most of why the\n//  system switch feels expensive and a hand-rolled one usually does not \u2014 the\n//  knob tracks your finger, squashes while held, and commits on release using\n//  gesture velocity rather than a naive midpoint test.\n//\n//  Usage:\n//      Toggle(\"Wi-Fi\", isOn: $isOn).toggleStyle(.sk)\n//      Toggle(\"Wi-Fi\", isOn: $isOn).toggleStyle(.sk(.liquidGlass))\n//\n\nimport SwiftUI\n\npublic struct SKToggleStyle: ToggleStyle {\n    public enum Track: Sendable {\n        /// Solid fill that crossfades to the accent colour.\n        case solid\n        /// iOS 26 Liquid Glass, with an approximation below iOS 26.\n        case liquidGlass\n    }\n\n    private let track: Track\n    private let width: CGFloat\n    private let height: CGFloat\n\n    public init(_ track: Track = .solid, width: CGFloat = 52, height: CGFloat = 32) {\n        self.track = track\n        self.width = width\n        self.height = height\n    }\n\n    public func makeBody(configuration: Configuration) -> some View {\n        SKToggleBody(\n            configuration: configuration,\n            track: track,\n            width: width,\n            height: height\n        )\n    }\n}\n\nprivate struct SKToggleBody: View {\n    let configuration: ToggleStyleConfiguration\n    let track: SKToggleStyle.Track\n    let width: CGFloat\n    let height: CGFloat\n\n    @Environment(\\.accessibilityReduceMotion) private var reduceMotion\n    @Environment(\\.isEnabled) private var isEnabled\n\n    /// Live finger offset while dragging, in points from the resting position.\n    @State private var dragOffset: CGFloat = 0\n    @State private var isPressed = false\n\n    private var inset: CGFloat { 3 }\n    private var knobSize: CGFloat { height - inset * 2 }\n    private var travel: CGFloat { width - knobSize - inset * 2 }\n\n    /// Resting x-offset for the current state, before any drag is applied.\n    private var restingOffset: CGFloat {\n        configuration.isOn ? travel : 0\n    }\n\n    /// Clamped so the knob can never leave the track, however far the finger goes.\n    private var knobOffset: CGFloat {\n        min(max(restingOffset + dragOffset, 0), travel)\n    }\n\n    /// A held knob widens slightly, exactly like the system switch. Purely\n    /// cosmetic, and the single cheapest way to make this feel native.\n    private var knobWidth: CGFloat {\n        isPressed ? knobSize + 4 : knobSize\n    }\n\n    /// 0\u20261 across the track. Drives the colour crossfade so the track lights up\n    /// progressively under the finger instead of snapping at the end.\n    private var progress: CGFloat {\n        travel > 0 ? knobOffset / travel : 0\n    }\n\n    var body: some View {\n        HStack(spacing: 0) {\n            // The label area is its own tap target. In a settings list the\n            // whole row should toggle, not just the 52pt switch \u2014 a fresh\n            // agent building a settings screen hit this immediately.\n            // Kept separate from the switch so the two gestures never race.\n            HStack {\n                configuration.label\n                Spacer(minLength: SK.Space.md)\n            }\n            .contentShape(.rect)\n            .onTapGesture { commit(to: !configuration.isOn) }\n\n            switchBody\n        }\n        .frame(minHeight: SK.Icon.hitTarget)\n    }\n\n    /// Single commit path for both the row tap and the drag release, so the\n    /// animation and haptic can never diverge between the two.\n    private func commit(to newValue: Bool) {\n        guard isEnabled, newValue != configuration.isOn else { return }\n        withAnimation(SKMotion.snap.resolved(reduceMotion: reduceMotion)) {\n            configuration.isOn = newValue\n        }\n        SK.Haptic.play(.selection)\n    }\n\n    private var switchBody: some View {\n        ZStack(alignment: .leading) {\n            trackView\n            knobView\n                .frame(width: knobWidth, height: knobSize)\n                .offset(x: knobOffset)\n                .padding(inset)\n        }\n        .frame(width: width, height: height)\n        .opacity(isEnabled ? 1 : 0.45)\n        .skAnimation(.snap, value: configuration.isOn)\n        .skAnimation(.micro, value: isPressed)\n        .gesture(dragGesture, isEnabled: isEnabled)\n        .accessibilityAddTraits(configuration.isOn ? [.isButton, .isSelected] : .isButton)\n    }\n\n    @ViewBuilder\n    private var trackView: some View {\n        let shape = Capsule(style: .continuous)\n        switch track {\n        case .solid:\n            shape\n                .fill(SK.Palette.fill)\n                .overlay {\n                    // Crossfaded rather than swapped so a partial drag shows a\n                    // partial colour \u2014 the state reads before you commit to it.\n                    shape.fill(SK.Palette.accent).opacity(progress)\n                }\n                .overlay {\n                    shape.strokeBorder(SK.Palette.separator.opacity(1 - progress), lineWidth: SK.Stroke.hairline)\n                }\n        case .liquidGlass:\n            Color.clear\n                .skSurface(.liquidGlass, radius: height / 2)\n                .overlay {\n                    shape.fill(SK.Palette.accent).opacity(progress * 0.85)\n                }\n        }\n    }\n\n    private var knobView: some View {\n        Capsule(style: .continuous)\n            .fill(.white)\n            .shadow(color: .black.opacity(0.18), radius: 3, x: 0, y: 2)\n            .shadow(color: .black.opacity(0.06), radius: 1, x: 0, y: 0)\n    }\n\n    private var dragGesture: some Gesture {\n        // minimumDistance 0 so the knob reacts to a plain tap as well, which\n        // keeps one code path for both interactions.\n        DragGesture(minimumDistance: 0)\n            .onChanged { value in\n                if !isPressed { isPressed = true }\n                dragOffset = value.translation.width\n            }\n            .onEnded { value in\n                isPressed = false\n\n                // Project where the knob would land if the finger kept its\n                // current velocity. Using predicted rather than final position\n                // is what makes a fast flick commit even when it is short.\n                let projected = restingOffset + value.predictedEndTranslation.width\n                let shouldBeOn = projected > travel / 2\n                dragOffset = 0\n                commit(to: shouldBeOn)\n            }\n    }\n}\n\nextension ToggleStyle where Self == SKToggleStyle {\n    /// `Toggle(...).toggleStyle(.sk)`\n    public static var sk: SKToggleStyle { SKToggleStyle() }\n\n    /// `Toggle(...).toggleStyle(.sk(.liquidGlass))`\n    public static func sk(\n        _ track: SKToggleStyle.Track,\n        width: CGFloat = 52,\n        height: CGFloat = 32\n    ) -> SKToggleStyle {\n        SKToggleStyle(track, width: width, height: height)\n    }\n}\n\n#Preview(\"SKToggle\") {\n    @Previewable @State var a = true\n    @Previewable @State var b = false\n    @Previewable @State var c = true\n\n    VStack(spacing: SK.Space.xl) {\n        Toggle(\"Solid, on\", isOn: $a).toggleStyle(.sk)\n        Toggle(\"Solid, off\", isOn: $b).toggleStyle(.sk)\n        Toggle(\"Liquid Glass\", isOn: $c).toggleStyle(.sk(.liquidGlass))\n        Toggle(\"Disabled\", isOn: .constant(true)).toggleStyle(.sk).disabled(true)\n    }\n    .font(SK.Type_.body)\n    .foregroundStyle(SK.Palette.label)\n    .padding(SK.Space.xl)\n    .frame(maxWidth: .infinity, maxHeight: .infinity)\n    .background(SK.Palette.surfaceSunken)\n}\n"
+    }
+  ],
+  "variants": [
+    {
+      "id": "solid",
+      "title": "Solid",
+      "tier": "free"
+    },
+    {
+      "id": "liquid-glass",
+      "title": "Liquid Glass",
+      "tier": "free"
+    }
+  ],
+  "usage": "Toggle(\"Wi-Fi\", isOn: $isOn).toggleStyle(.sk)\nToggle(\"Wi-Fi\", isOn: $isOn).toggleStyle(.sk(.liquidGlass))",
+  "docs": "https://theswiftk.it.com/swiftui/toggle",
+  "keywords": [
+    "swiftui toggle",
+    "swiftui switch",
+    "ios switch",
+    "swiftui togglestyle"
+  ],
+  "meta": {
+    "searchVolume": 3490
+  }
+}

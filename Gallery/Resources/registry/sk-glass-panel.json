@@ -1,0 +1,57 @@
+{
+  "$schema": "https://theswiftk.it.com/ui/schema/registry-item.json",
+  "name": "sk-glass-panel",
+  "type": "registry:component",
+  "title": "Glass Panel",
+  "description": "iOS 26 Liquid Glass, with a fallback that is actually worth shipping below iOS 26 rather than a flat rectangle.",
+  "author": "Ahmed Gagan",
+  "tier": "free",
+  "platforms": {
+    "iOS": "17.0",
+    "macOS": "14.0"
+  },
+  "categories": [
+    "surfaces"
+  ],
+  "dependencies": [],
+  "registryDependencies": [
+    "foundation"
+  ],
+  "files": [
+    {
+      "path": "Sources/SwiftKitUI/Components/SKGlassPanel.swift",
+      "target": "SwiftKitUI/SKGlassPanel.swift",
+      "type": "registry:component",
+      "lines": 134,
+      "content": "//\n//  SKGlassPanel.swift\n//  Swift Kit UI\n//\n//  Requires: SwiftKitUI.swift\n//\n//  iOS 26 Liquid Glass, with a fallback that is actually worth shipping below\n//  iOS 26 rather than a flat rectangle.\n//\n//  The pre-26 path is a material plus a specular rim: a gradient border that is\n//  bright on the top-left and fades to nothing bottom-right, which is what\n//  reads as \"light catching an edge\". Without the rim, `.ultraThinMaterial`\n//  alone just looks like grey.\n//\n//  Usage:\n//      SKGlassPanel { Text(\"Now playing\") }\n//      SKGlassPanel(tint: .purple, intensity: .strong) { ... }\n//\n\nimport SwiftUI\n\npublic struct SKGlassPanel<Content: View>: View {\n    public enum Intensity: Sendable {\n        case subtle, regular, strong\n\n        var rimOpacity: Double {\n            switch self {\n            case .subtle: 0.25\n            case .regular: 0.45\n            case .strong: 0.7\n            }\n        }\n\n        var tintOpacity: Double {\n            switch self {\n            case .subtle: 0.06\n            case .regular: 0.12\n            case .strong: 0.2\n            }\n        }\n    }\n\n    private let tint: Color?\n    private let intensity: Intensity\n    private let radius: CGFloat\n    private let padding: CGFloat\n    private let content: Content\n\n    public init(\n        tint: Color? = nil,\n        intensity: Intensity = .regular,\n        radius: CGFloat = SK.Radius.xl,\n        padding: CGFloat = SK.Space.lg,\n        @ViewBuilder content: () -> Content\n    ) {\n        self.tint = tint\n        self.intensity = intensity\n        self.radius = radius\n        self.padding = padding\n        self.content = content()\n    }\n\n    private var shape: RoundedRectangle {\n        RoundedRectangle(cornerRadius: radius, style: .continuous)\n    }\n\n    public var body: some View {\n        content\n            .padding(padding)\n            .background { glass }\n            .clipShape(shape)\n            .overlay { rim }\n            .shadow(color: .black.opacity(0.16), radius: 20, y: 10)\n    }\n\n    @ViewBuilder\n    private var glass: some View {\n        if #available(iOS 26, macOS 26, *) {\n            Color.clear\n                .glassEffect(.regular, in: shape)\n                .overlay { if let tint { shape.fill(tint.opacity(intensity.tintOpacity)) } }\n        } else {\n            ZStack {\n                Rectangle().fill(.ultraThinMaterial)\n                if let tint { Rectangle().fill(tint.opacity(intensity.tintOpacity)) }\n            }\n        }\n    }\n\n    /// The specular edge. Bright top-leading, gone by bottom-trailing.\n    private var rim: some View {\n        shape.strokeBorder(\n            LinearGradient(\n                colors: [\n                    .white.opacity(intensity.rimOpacity),\n                    .white.opacity(intensity.rimOpacity * 0.25),\n                    .clear,\n                ],\n                startPoint: .topLeading,\n                endPoint: .bottomTrailing\n            ),\n            lineWidth: SK.Stroke.thin\n        )\n    }\n}\n\n#Preview(\"SKGlassPanel\") {\n    ZStack {\n        // Glass needs something behind it or there is nothing to refract.\n        LinearGradient(\n            colors: [.purple, .blue, .teal],\n            startPoint: .topLeading, endPoint: .bottomTrailing\n        )\n        .ignoresSafeArea()\n\n        VStack(spacing: SK.Space.lg) {\n            SKGlassPanel(intensity: .subtle) {\n                Text(\"Subtle\").font(SK.Type_.headline).foregroundStyle(.white)\n            }\n            SKGlassPanel {\n                VStack(alignment: .leading, spacing: SK.Space.xs) {\n                    Text(\"Now Playing\").font(SK.Type_.caption).foregroundStyle(.white.opacity(0.75))\n                    Text(\"Liquid Glass\").font(SK.Type_.title).foregroundStyle(.white)\n                }\n                .frame(maxWidth: .infinity, alignment: .leading)\n            }\n            SKGlassPanel(tint: .purple, intensity: .strong) {\n                Text(\"Strong, tinted\").font(SK.Type_.headline).foregroundStyle(.white)\n            }\n        }\n        .padding(SK.Space.xl)\n    }\n}\n"
+    }
+  ],
+  "variants": [
+    {
+      "id": "subtle",
+      "title": "Subtle",
+      "tier": "free"
+    },
+    {
+      "id": "regular",
+      "title": "Regular",
+      "tier": "free"
+    },
+    {
+      "id": "strong",
+      "title": "Strong",
+      "tier": "free"
+    }
+  ],
+  "usage": "SKGlassPanel { Text(\"Now playing\") }\nSKGlassPanel(tint: .purple, intensity: .strong) { ... }",
+  "docs": "https://theswiftk.it.com/swiftui/liquid-glass",
+  "keywords": [
+    "swiftui liquid glass",
+    "liquid glass swiftui",
+    "swiftui glass effect",
+    "liquid buttons"
+  ],
+  "meta": {
+    "searchVolume": 740
+  }
+}

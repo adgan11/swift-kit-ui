@@ -1,0 +1,51 @@
+{
+  "$schema": "https://theswiftk.it.com/ui/schema/registry-item.json",
+  "name": "sk-chip",
+  "type": "registry:component",
+  "title": "Chip",
+  "description": "A selectable tag. Filter bars, topic pickers, multi-select.",
+  "author": "Ahmed Gagan",
+  "tier": "free",
+  "platforms": {
+    "iOS": "17.0",
+    "macOS": "14.0"
+  },
+  "categories": [
+    "controls"
+  ],
+  "dependencies": [],
+  "registryDependencies": [
+    "foundation"
+  ],
+  "files": [
+    {
+      "path": "Sources/SwiftKitUI/Components/SKChip.swift",
+      "target": "SwiftKitUI/SKChip.swift",
+      "type": "registry:component",
+      "lines": 108,
+      "content": "//\n//  SKChip.swift\n//  Swift Kit UI\n//\n//  Requires: SwiftKitUI.swift\n//\n//  A selectable tag. Filter bars, topic pickers, multi-select.\n//\n//  Selection animates on `.snap` and fires a selection haptic, so a row of\n//  chips feels like the same control as the toggle and the tab bar rather than\n//  a different one that happens to be nearby.\n//\n//  Usage:\n//      SKChip(\"Swift\", isSelected: selected.contains(\"Swift\")) { toggle(\"Swift\") }\n//      SKChip(\"Removable\", isSelected: true, onRemove: { })\n//\n\nimport SwiftUI\n\npublic struct SKChip: View {\n    private let text: String\n    private let systemImage: String?\n    private let isSelected: Bool\n    private let onTap: (() -> Void)?\n    private let onRemove: (() -> Void)?\n\n    public init(\n        _ text: String,\n        systemImage: String? = nil,\n        isSelected: Bool = false,\n        onTap: (() -> Void)? = nil,\n        onRemove: (() -> Void)? = nil\n    ) {\n        self.text = text\n        self.systemImage = systemImage\n        self.isSelected = isSelected\n        self.onTap = onTap\n        self.onRemove = onRemove\n    }\n\n    public var body: some View {\n        Button {\n            onTap?()\n            SK.Haptic.play(.selection)\n        } label: {\n            HStack(spacing: SK.Space.xs) {\n                if let systemImage {\n                    Image(systemName: systemImage).font(SK.Icon.symbol(SK.Icon.xs))\n                }\n                Text(text).font(SK.Type_.caption)\n                if onRemove != nil {\n                    Image(systemName: \"xmark\")\n                        .font(SK.Icon.symbol(SK.Icon.xs, weight: .bold))\n                        .onTapGesture { onRemove?() }\n                        .accessibilityLabel(\"Remove \\(text)\")\n                }\n            }\n            .foregroundStyle(isSelected ? Color.white : SK.Palette.label)\n            .padding(.horizontal, SK.Space.md)\n            .padding(.vertical, SK.Space.sm)\n            .background {\n                Capsule().fill(isSelected ? SK.Palette.accent : SK.Palette.fill)\n            }\n            .overlay {\n                if !isSelected {\n                    Capsule().strokeBorder(SK.Palette.separator, lineWidth: SK.Stroke.hairline)\n                }\n            }\n            .contentShape(.capsule)\n        }\n        .buttonStyle(.skPress(scale: 0.95, haptic: nil))\n        .skAnimation(.snap, value: isSelected)\n        .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : .isButton)\n    }\n}\n\n#Preview(\"SKChip\") {\n    @Previewable @State var selected: Set<String> = [\"SwiftUI\"]\n    let tags = [\"SwiftUI\", \"UIKit\", \"Combine\", \"SwiftData\", \"Metal\"]\n\n    VStack(spacing: SK.Space.xl) {\n        FlowRow(tags: tags, selected: selected) { tag in\n            if selected.contains(tag) { selected.remove(tag) } else { selected.insert(tag) }\n        }\n        HStack(spacing: SK.Space.sm) {\n            SKChip(\"Removable\", isSelected: true, onRemove: {})\n            SKChip(\"With icon\", systemImage: \"star.fill\")\n        }\n    }\n    .padding(SK.Space.xl)\n    .frame(maxWidth: .infinity, maxHeight: .infinity)\n    .background(SK.Palette.surfaceSunken)\n}\n\nprivate struct FlowRow: View {\n    let tags: [String]\n    let selected: Set<String>\n    let onTap: (String) -> Void\n\n    var body: some View {\n        HStack(spacing: SK.Space.sm) {\n            ForEach(tags.prefix(3), id: \\.self) { tag in\n                SKChip(tag, isSelected: selected.contains(tag)) { onTap(tag) }\n            }\n        }\n    }\n}\n"
+    }
+  ],
+  "variants": [
+    {
+      "id": "default",
+      "title": "Default",
+      "tier": "free"
+    },
+    {
+      "id": "removable",
+      "title": "Removable",
+      "tier": "free"
+    }
+  ],
+  "usage": "SKChip(\"Swift\", isSelected: selected.contains(\"Swift\")) { toggle(\"Swift\") }\nSKChip(\"Removable\", isSelected: true, onRemove: { })",
+  "docs": "https://theswiftk.it.com/swiftui/chip",
+  "keywords": [
+    "swiftui chip",
+    "swiftui tag view",
+    "ios chip"
+  ],
+  "meta": {
+    "searchVolume": 90
+  }
+}

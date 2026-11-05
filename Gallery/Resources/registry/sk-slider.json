@@ -1,0 +1,51 @@
+{
+  "$schema": "https://theswiftk.it.com/ui/schema/registry-item.json",
+  "name": "sk-slider",
+  "type": "registry:component",
+  "title": "Slider",
+  "description": "A slider that grows under your thumb and ticks haptically as it crosses steps. The track thickens on contact \u2014 the same trick that makes the system volume slider feel physical.",
+  "author": "Ahmed Gagan",
+  "tier": "free",
+  "platforms": {
+    "iOS": "17.0",
+    "macOS": "14.0"
+  },
+  "categories": [
+    "controls"
+  ],
+  "dependencies": [],
+  "registryDependencies": [
+    "foundation"
+  ],
+  "files": [
+    {
+      "path": "Sources/SwiftKitUI/Components/SKSlider.swift",
+      "target": "SwiftKitUI/SKSlider.swift",
+      "type": "registry:component",
+      "lines": 136,
+      "content": "//\n//  SKSlider.swift\n//  Swift Kit UI\n//\n//  Requires: SwiftKitUI.swift\n//\n//  A slider that grows under your thumb and ticks haptically as it crosses\n//  steps. The track thickens on contact \u2014 the same trick that makes the system\n//  volume slider feel physical.\n//\n//  Usage:\n//      SKSlider(value: $volume, in: 0...1)\n//      SKSlider(value: $rating, in: 0...10, step: 1) { Text(\"Rating\") }\n//\n\nimport SwiftUI\n\npublic struct SKSlider<Label: View>: View {\n    @Binding private var value: Double\n    private let range: ClosedRange<Double>\n    private let step: Double?\n    private let label: Label\n\n    @State private var isDragging = false\n    @State private var lastTick: Double?\n    @Environment(\\.isEnabled) private var isEnabled\n\n    public init(\n        value: Binding<Double>,\n        in range: ClosedRange<Double> = 0...1,\n        step: Double? = nil,\n        @ViewBuilder label: () -> Label\n    ) {\n        self._value = value\n        self.range = range\n        self.step = step\n        self.label = label()\n    }\n\n    private var progress: Double {\n        let span = range.upperBound - range.lowerBound\n        guard span > 0 else { return 0 }\n        return min(max((value - range.lowerBound) / span, 0), 1)\n    }\n\n    private var trackHeight: CGFloat { isDragging ? 14 : 10 }\n\n    public var body: some View {\n        VStack(alignment: .leading, spacing: SK.Space.sm) {\n            label\n            GeometryReader { geo in\n                track(width: geo.size.width)\n                    .frame(height: SK.Icon.hitTarget)\n                    .contentShape(.rect)\n                    .gesture(drag(width: geo.size.width))\n            }\n            .frame(height: SK.Icon.hitTarget)\n        }\n        .opacity(isEnabled ? 1 : 0.45)\n        .skAnimation(.micro, value: isDragging)\n        .accessibilityElement()\n        .accessibilityValue(Text(String(format: \"%.2f\", value)))\n        .accessibilityAdjustableAction { direction in\n            let delta = step ?? (range.upperBound - range.lowerBound) / 20\n            switch direction {\n            case .increment: value = min(value + delta, range.upperBound)\n            case .decrement: value = max(value - delta, range.lowerBound)\n            @unknown default: break\n            }\n        }\n    }\n\n    private func track(width: CGFloat) -> some View {\n        ZStack(alignment: .leading) {\n            Capsule().fill(SK.Palette.fill)\n                .frame(height: trackHeight)\n            Capsule().fill(SK.Palette.accent)\n                .frame(width: max(trackHeight, width * progress), height: trackHeight)\n            Circle()\n                .fill(.white)\n                .shadow(color: .black.opacity(0.22), radius: 4, y: 2)\n                .frame(width: isDragging ? 30 : 26, height: isDragging ? 30 : 26)\n                .offset(x: (width - 26) * progress)\n        }\n        .frame(maxHeight: .infinity)\n    }\n\n    private func drag(width: CGFloat) -> some Gesture {\n        DragGesture(minimumDistance: 0)\n            .onChanged { g in\n                isDragging = true\n                let span = range.upperBound - range.lowerBound\n                let raw = range.lowerBound + Double(min(max(g.location.x / width, 0), 1)) * span\n                let next = step.map { (raw / $0).rounded() * $0 } ?? raw\n                let clamped = min(max(next, range.lowerBound), range.upperBound)\n\n                // Tick only when a step boundary is actually crossed, otherwise\n                // a continuous drag would fire haptics every frame.\n                if step != nil, clamped != lastTick {\n                    SK.Haptic.play(.light)\n                    lastTick = clamped\n                }\n                value = clamped\n            }\n            .onEnded { _ in\n                isDragging = false\n                lastTick = nil\n            }\n    }\n}\n\nextension SKSlider where Label == EmptyView {\n    public init(value: Binding<Double>, in range: ClosedRange<Double> = 0...1, step: Double? = nil) {\n        self.init(value: value, in: range, step: step) { EmptyView() }\n    }\n}\n\n#Preview(\"SKSlider\") {\n    @Previewable @State var volume = 0.4\n    @Previewable @State var rating = 6.0\n\n    VStack(spacing: SK.Space.xl) {\n        SKSlider(value: $volume) {\n            Text(\"Volume\").font(SK.Type_.callout).foregroundStyle(SK.Palette.labelSecondary)\n        }\n        SKSlider(value: $rating, in: 0...10, step: 1) {\n            Text(\"Steps of 1 \u2014 feel the ticks\")\n                .font(SK.Type_.callout).foregroundStyle(SK.Palette.labelSecondary)\n        }\n        SKSlider(value: .constant(0.6)).disabled(true)\n    }\n    .padding(SK.Space.xl)\n    .frame(maxWidth: .infinity, maxHeight: .infinity)\n    .background(SK.Palette.surfaceSunken)\n}\n"
+    }
+  ],
+  "variants": [
+    {
+      "id": "continuous",
+      "title": "Continuous",
+      "tier": "free"
+    },
+    {
+      "id": "stepped",
+      "title": "Stepped",
+      "tier": "free"
+    }
+  ],
+  "usage": "SKSlider(value: $volume, in: 0...1)\nSKSlider(value: $rating, in: 0...10, step: 1) { Text(\"Rating\") }",
+  "docs": "https://theswiftk.it.com/swiftui/slider",
+  "keywords": [
+    "ios slider",
+    "swiftui slider",
+    "swiftui custom slider"
+  ],
+  "meta": {
+    "searchVolume": 1110
+  }
+}

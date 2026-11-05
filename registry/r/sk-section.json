@@ -1,0 +1,51 @@
+{
+  "$schema": "https://theswiftk.it.com/ui/schema/registry-item.json",
+  "name": "sk-section",
+  "type": "registry:component",
+  "title": "Section",
+  "description": "A titled group. Pair with SKRow, or put anything else inside.",
+  "author": "Ahmed Gagan",
+  "tier": "free",
+  "platforms": {
+    "iOS": "17.0",
+    "macOS": "14.0"
+  },
+  "categories": [
+    "lists"
+  ],
+  "dependencies": [],
+  "registryDependencies": [
+    "foundation"
+  ],
+  "files": [
+    {
+      "path": "Sources/SwiftKitUI/Components/SKSection.swift",
+      "target": "SwiftKitUI/SKSection.swift",
+      "type": "registry:component",
+      "lines": 108,
+      "content": "//\n//  SKSection.swift\n//  Swift Kit UI\n//\n//  Requires: SwiftKitUI.swift\n//\n//  A titled group. Pair with SKRow, or put anything else inside.\n//\n//  Deliberately generic over its content rather than taking a row array: a\n//  section should not know what a row is. That keeps this file compilable on\n//  its own, which is the rule every component in this kit follows.\n//\n//  Usage:\n//      SKSection(\"Preferences\") {\n//          SKRow(title: \"Wi-Fi\")\n//          SKRow(title: \"Bluetooth\", showsSeparator: false)\n//      }\n//\n\nimport SwiftUI\n\npublic struct SKSection<Content: View>: View {\n    private let title: String?\n    private let footer: String?\n    private let style: SK.Surface\n    private let content: Content\n\n    public init(\n        _ title: String? = nil,\n        footer: String? = nil,\n        style: SK.Surface = .bordered,\n        @ViewBuilder content: () -> Content\n    ) {\n        self.title = title\n        self.footer = footer\n        self.style = style\n        self.content = content()\n    }\n\n    public var body: some View {\n        VStack(alignment: .leading, spacing: SK.Space.sm) {\n            if let title {\n                Text(title.uppercased())\n                    .font(SK.Type_.caption)\n                    .foregroundStyle(SK.Palette.labelSecondary)\n                    .padding(.leading, SK.Space.xs)\n                    .accessibilityAddTraits(.isHeader)\n            }\n\n            VStack(spacing: 0) { content }\n                .skSurface(style, radius: SK.Radius.lg)\n                // Clip so a trailing row separator cannot escape the corner\n                // radius and draw a stray line across the card's rounded edge.\n                .clipShape(RoundedRectangle(cornerRadius: SK.Radius.lg, style: .continuous))\n\n            if let footer {\n                Text(footer)\n                    .font(SK.Type_.caption)\n                    .foregroundStyle(SK.Palette.labelTertiary)\n                    .padding(.leading, SK.Space.xs)\n                    .fixedSize(horizontal: false, vertical: true)\n            }\n        }\n    }\n}\n\n#Preview(\"SKSection\") {\n    // Rows here are inlined rather than using SKRow: a component's preview must\n    // not reference a sibling, or the file stops compiling on its own.\n    // `scripts/isolation_test.py` enforces this.\n    func demoRow(_ title: String, _ symbol: String, last: Bool = false) -> some View {\n        VStack(spacing: 0) {\n            HStack(spacing: SK.Space.md) {\n                Image(systemName: symbol)\n                    .font(SK.Icon.symbol(SK.Icon.md))\n                    .foregroundStyle(SK.Palette.accent)\n                    .frame(width: SK.Icon.lg)\n                Text(title).font(SK.Type_.body).foregroundStyle(SK.Palette.label)\n                Spacer()\n            }\n            .padding(.horizontal, SK.Space.lg)\n            .padding(.vertical, SK.Space.md)\n            .frame(minHeight: SK.Icon.hitTarget)\n\n            if !last {\n                Rectangle()\n                    .fill(SK.Palette.separator)\n                    .frame(height: SK.Stroke.hairline)\n                    .padding(.leading, SK.Space.lg + SK.Icon.lg + SK.Space.md)\n            }\n        }\n    }\n\n    return ScrollView {\n        VStack(spacing: SK.Space.xl) {\n            SKSection(\"Preferences\") {\n                demoRow(\"Wi-Fi\", \"wifi\")\n                demoRow(\"Bluetooth\", \"dot.radiowaves.right\", last: true)\n            }\n            SKSection(\"Danger Zone\", footer: \"This cannot be undone.\") {\n                demoRow(\"Delete Account\", \"trash.fill\", last: true)\n            }\n        }\n        .padding(SK.Space.lg)\n    }\n    .background(SK.Palette.surfaceSunken)\n}\n"
+    }
+  ],
+  "variants": [
+    {
+      "id": "bordered",
+      "title": "Bordered",
+      "tier": "free"
+    },
+    {
+      "id": "elevated",
+      "title": "Elevated",
+      "tier": "free"
+    }
+  ],
+  "usage": "SKSection(\"Preferences\") {\nSKRow(title: \"Wi-Fi\")\nSKRow(title: \"Bluetooth\", showsSeparator: false)\n}",
+  "docs": "https://theswiftk.it.com/swiftui/section",
+  "keywords": [
+    "swiftui section",
+    "swiftui grouped list",
+    "ios settings list"
+  ],
+  "meta": {
+    "searchVolume": 110
+  }
+}

@@ -1,0 +1,51 @@
+{
+  "$schema": "https://theswiftk.it.com/ui/schema/registry-item.json",
+  "name": "sk-skeleton",
+  "type": "registry:component",
+  "title": "Skeleton",
+  "description": "Placeholder shapes for loading states.",
+  "author": "Ahmed Gagan",
+  "tier": "free",
+  "platforms": {
+    "iOS": "17.0",
+    "macOS": "14.0"
+  },
+  "categories": [
+    "feedback"
+  ],
+  "dependencies": [],
+  "registryDependencies": [
+    "foundation"
+  ],
+  "files": [
+    {
+      "path": "Sources/SwiftKitUI/Components/SKSkeleton.swift",
+      "target": "SwiftKitUI/SKSkeleton.swift",
+      "type": "registry:component",
+      "lines": 110,
+      "content": "//\n//  SKSkeleton.swift\n//  Swift Kit UI\n//\n//  Requires: SwiftKitUI.swift\n//\n//  Placeholder shapes for loading states.\n//\n//  Skeletons beat spinners when you know the shape of what is coming: the\n//  layout does not jump when real content lands, because the placeholder was\n//  already the right size.\n//\n//  Usage:\n//      SKSkeleton(.text(lines: 3))\n//      SKSkeleton(.circle, size: 48)\n//      SKSkeletonRow()\n//      Text(\"Loaded\").skRedacted(isLoading)\n//\n\nimport SwiftUI\n\npublic struct SKSkeleton: View {\n    public enum Shape_: Sendable {\n        case rect\n        case circle\n        case text(lines: Int)\n    }\n\n    private let shape: Shape_\n    private let size: CGFloat?\n    private let cornerRadius: CGFloat\n\n    public init(_ shape: Shape_ = .rect, size: CGFloat? = nil, cornerRadius: CGFloat = SK.Radius.sm) {\n        self.shape = shape\n        self.size = size\n        self.cornerRadius = cornerRadius\n    }\n\n    public var body: some View {\n        Group {\n            switch shape {\n            case .rect:\n                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)\n                    .fill(SK.Palette.placeholder)\n                    .frame(height: size ?? 16)\n            case .circle:\n                Circle()\n                    .fill(SK.Palette.placeholder)\n                    .frame(width: size ?? 44, height: size ?? 44)\n            case .text(let lines):\n                VStack(alignment: .leading, spacing: SK.Space.sm) {\n                    ForEach(0..<max(lines, 1), id: \\.self) { index in\n                        RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)\n                            .fill(SK.Palette.placeholder)\n                            .frame(height: size ?? 12)\n                            // Last line short, like real text.\n                            .frame(maxWidth: index == lines - 1 && lines > 1 ? 160 : .infinity,\n                                   alignment: .leading)\n                    }\n                }\n            }\n        }\n        .skShimmer()\n        .accessibilityHidden(true)\n    }\n}\n\n/// Avatar + two lines. The single most-repeated skeleton in any list app.\npublic struct SKSkeletonRow: View {\n    private let showsAvatar: Bool\n\n    public init(showsAvatar: Bool = true) { self.showsAvatar = showsAvatar }\n\n    public var body: some View {\n        HStack(spacing: SK.Space.md) {\n            if showsAvatar { SKSkeleton(.circle, size: 44) }\n            VStack(alignment: .leading, spacing: SK.Space.sm) {\n                SKSkeleton(.rect, size: 12)\n                SKSkeleton(.rect, size: 10).frame(maxWidth: 140, alignment: .leading)\n            }\n        }\n        .accessibilityHidden(true)\n    }\n}\n\nextension View {\n    /// Greys out and shimmers this view while loading, keeping its exact layout.\n    public func skRedacted(_ isLoading: Bool) -> some View {\n        redacted(reason: isLoading ? .placeholder : [])\n            .skShimmer(isLoading)\n    }\n}\n\n#Preview(\"SKSkeleton\") {\n    VStack(alignment: .leading, spacing: SK.Space.xl) {\n        SKSkeletonRow()\n        SKSkeletonRow()\n        SKSkeleton(.text(lines: 3))\n        SKSkeleton(.rect, size: 120, cornerRadius: SK.Radius.lg)\n        VStack(alignment: .leading, spacing: SK.Space.xs) {\n            Text(\"Real text, redacted\").font(SK.Type_.headline)\n            Text(\"Same layout, no jump when it loads.\").font(SK.Type_.callout)\n        }\n        .skRedacted(true)\n    }\n    .padding(SK.Space.xl)\n    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)\n    .background(SK.Palette.surfaceSunken)\n}\n"
+    }
+  ],
+  "variants": [
+    {
+      "id": "row",
+      "title": "Row",
+      "tier": "free"
+    },
+    {
+      "id": "text",
+      "title": "Text",
+      "tier": "free"
+    }
+  ],
+  "usage": "SKSkeleton(.text(lines: 3))\nSKSkeleton(.circle, size: 48)\nSKSkeletonRow()\nText(\"Loaded\").skRedacted(isLoading)",
+  "docs": "https://theswiftk.it.com/swiftui/skeleton",
+  "keywords": [
+    "swiftui skeleton",
+    "swiftui shimmer",
+    "swiftui skeleton loading"
+  ],
+  "meta": {
+    "searchVolume": 40
+  }
+}

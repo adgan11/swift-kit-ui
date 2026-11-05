@@ -1,0 +1,51 @@
+{
+  "$schema": "https://theswiftk.it.com/ui/schema/registry-item.json",
+  "name": "sk-page-indicator",
+  "type": "registry:component",
+  "title": "Page Indicator",
+  "description": "Page dots where the active one stretches into a capsule instead of just changing colour. Tappable, so it doubles as navigation.",
+  "author": "Ahmed Gagan",
+  "tier": "free",
+  "platforms": {
+    "iOS": "17.0",
+    "macOS": "14.0"
+  },
+  "categories": [
+    "navigation"
+  ],
+  "dependencies": [],
+  "registryDependencies": [
+    "foundation"
+  ],
+  "files": [
+    {
+      "path": "Sources/SwiftKitUI/Components/SKPageIndicator.swift",
+      "target": "SwiftKitUI/SKPageIndicator.swift",
+      "type": "registry:component",
+      "lines": 102,
+      "content": "//\n//  SKPageIndicator.swift\n//  Swift Kit UI\n//\n//  Requires: SwiftKitUI.swift\n//\n//  Page dots where the active one stretches into a capsule instead of just\n//  changing colour. Tappable, so it doubles as navigation.\n//\n//  Usage:\n//      SKPageIndicator(count: 4, index: $page)\n//      SKPageIndicator(count: 4, index: $page, style: .bars)\n//\n\nimport SwiftUI\n\npublic struct SKPageIndicator: View {\n    public enum Style: Sendable { case dots, bars }\n\n    private let count: Int\n    @Binding private var index: Int\n    private let style: Style\n    private let tint: Color\n\n    @Environment(\\.accessibilityReduceMotion) private var reduceMotion\n\n    public init(\n        count: Int,\n        index: Binding<Int>,\n        style: Style = .dots,\n        tint: Color = SK.Palette.accent\n    ) {\n        self.count = count\n        self._index = index\n        self.style = style\n        self.tint = tint\n    }\n\n    public var body: some View {\n        HStack(spacing: style == .dots ? SK.Space.sm : SK.Space.xs) {\n            ForEach(0..<max(count, 1), id: \\.self) { page in\n                dot(page)\n            }\n        }\n        .accessibilityElement()\n        .accessibilityLabel(\"Page\")\n        .accessibilityValue(\"\\(index + 1) of \\(count)\")\n        .accessibilityAdjustableAction { direction in\n            switch direction {\n            case .increment: if index + 1 < count { index += 1 }\n            case .decrement: if index > 0 { index -= 1 }\n            @unknown default: break\n            }\n        }\n    }\n\n    private func dot(_ page: Int) -> some View {\n        let active = page == index\n        let height: CGFloat = style == .dots ? 8 : 4\n        let activeWidth: CGFloat = style == .dots ? 24 : 28\n        let restWidth: CGFloat = style == .dots ? 8 : 14\n\n        return Capsule()\n            .fill(active ? tint : SK.Palette.separator)\n            .frame(width: active ? activeWidth : restWidth, height: height)\n            // Hit target stays a comfortable size even though the dot is tiny.\n            .frame(width: max(activeWidth, 30), height: SK.Space.xxl, alignment: .center)\n            .contentShape(.rect)\n            .onTapGesture {\n                guard !active else { return }\n                withAnimation(SKMotion.snap.resolved(reduceMotion: reduceMotion)) { index = page }\n                SK.Haptic.play(.selection)\n            }\n            .skAnimation(.snap, value: index)\n    }\n}\n\n#Preview(\"SKPageIndicator\") {\n    @Previewable @State var page = 0\n\n    VStack(spacing: SK.Space.xxl) {\n        TabView(selection: $page) {\n            ForEach(0..<4, id: \\.self) { i in\n                RoundedRectangle(cornerRadius: SK.Radius.xl, style: .continuous)\n                    .fill(SK.Palette.accentSoft)\n                    .overlay(Text(\"Page \\(i + 1)\").font(SK.Type_.title))\n                    .padding(SK.Space.lg)\n                    .tag(i)\n            }\n        }\n        #if os(iOS)\n        .tabViewStyle(.page(indexDisplayMode: .never))\n        #endif\n        .frame(height: 220)\n\n        SKPageIndicator(count: 4, index: $page)\n        SKPageIndicator(count: 4, index: $page, style: .bars, tint: SK.Palette.success)\n    }\n    .frame(maxWidth: .infinity, maxHeight: .infinity)\n    .background(SK.Palette.surfaceSunken)\n}\n"
+    }
+  ],
+  "variants": [
+    {
+      "id": "dots",
+      "title": "Dots",
+      "tier": "free"
+    },
+    {
+      "id": "bars",
+      "title": "Bars",
+      "tier": "free"
+    }
+  ],
+  "usage": "SKPageIndicator(count: 4, index: $page)\nSKPageIndicator(count: 4, index: $page, style: .bars)",
+  "docs": "https://theswiftk.it.com/swiftui/page-indicator",
+  "keywords": [
+    "swiftui page indicator",
+    "ios page control",
+    "swiftui page dots"
+  ],
+  "meta": {
+    "searchVolume": 50
+  }
+}

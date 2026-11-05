@@ -1,0 +1,51 @@
+{
+  "$schema": "https://theswiftk.it.com/ui/schema/registry-item.json",
+  "name": "sk-row",
+  "type": "registry:component",
+  "title": "Row",
+  "description": "A list row: optional leading symbol, title, optional subtitle, and whatever you want on the trailing edge.",
+  "author": "Ahmed Gagan",
+  "tier": "free",
+  "platforms": {
+    "iOS": "17.0",
+    "macOS": "14.0"
+  },
+  "categories": [
+    "lists"
+  ],
+  "dependencies": [],
+  "registryDependencies": [
+    "foundation"
+  ],
+  "files": [
+    {
+      "path": "Sources/SwiftKitUI/Components/SKRow.swift",
+      "target": "SwiftKitUI/SKRow.swift",
+      "type": "registry:component",
+      "lines": 145,
+      "content": "//\n//  SKRow.swift\n//  Swift Kit UI\n//\n//  Requires: SwiftKitUI.swift\n//\n//  A list row: optional leading symbol, title, optional subtitle, and whatever\n//  you want on the trailing edge.\n//\n//  The separator is inset to line up under the title rather than the icon,\n//  which is what iOS does and what makes a stack of rows read as a list instead\n//  of a pile of boxes.\n//\n//  Usage:\n//      SKRow(title: \"Wi-Fi\", subtitle: \"Home\", systemImage: \"wifi\") { Text(\"On\") }\n//      SKRow(title: \"Account\", systemImage: \"person.fill\", onTap: { })\n//      SKRow(title: \"Last\", showsSeparator: false)\n//\n\nimport SwiftUI\n\npublic struct SKRow<Trailing: View>: View {\n    private let title: String\n    private let subtitle: String?\n    private let systemImage: String?\n    private let tint: Color\n    private let showsSeparator: Bool\n    private let onTap: (() -> Void)?\n    private let trailing: Trailing\n\n    public init(\n        title: String,\n        subtitle: String? = nil,\n        systemImage: String? = nil,\n        tint: Color = SK.Palette.accent,\n        showsSeparator: Bool = true,\n        onTap: (() -> Void)? = nil,\n        @ViewBuilder trailing: () -> Trailing\n    ) {\n        self.title = title\n        self.subtitle = subtitle\n        self.systemImage = systemImage\n        self.tint = tint\n        self.showsSeparator = showsSeparator\n        self.onTap = onTap\n        self.trailing = trailing()\n    }\n\n    public var body: some View {\n        if let onTap {\n            Button(action: onTap) { row }\n                .buttonStyle(.skPress(scale: 0.99, haptic: .light))\n        } else {\n            row\n        }\n    }\n\n    private var row: some View {\n        VStack(spacing: 0) {\n            HStack(spacing: SK.Space.md) {\n                if let systemImage {\n                    Image(systemName: systemImage)\n                        .font(SK.Icon.symbol(SK.Icon.md))\n                        .foregroundStyle(tint)\n                        .frame(width: SK.Icon.lg)\n                }\n\n                VStack(alignment: .leading, spacing: 1) {\n                    Text(title)\n                        .font(SK.Type_.body)\n                        .foregroundStyle(SK.Palette.label)\n                    if let subtitle {\n                        Text(subtitle)\n                            .font(SK.Type_.caption)\n                            .foregroundStyle(SK.Palette.labelSecondary)\n                    }\n                }\n\n                Spacer(minLength: SK.Space.sm)\n                trailing\n            }\n            .padding(.horizontal, SK.Space.lg)\n            .padding(.vertical, SK.Space.md)\n            .frame(minHeight: SK.Icon.hitTarget)\n\n            if showsSeparator {\n                Rectangle()\n                    .fill(SK.Palette.separator)\n                    .frame(height: SK.Stroke.hairline)\n                    // Inset to the title, not the icon \u2014 the detail that makes\n                    // a stack of rows read as one list.\n                    .padding(.leading, systemImage == nil\n                             ? SK.Space.lg\n                             : SK.Space.lg + SK.Icon.lg + SK.Space.md)\n            }\n        }\n        .contentShape(.rect)\n    }\n}\n\nextension SKRow where Trailing == EmptyView {\n    /// Row with no trailing content.\n    public init(\n        title: String,\n        subtitle: String? = nil,\n        systemImage: String? = nil,\n        tint: Color = SK.Palette.accent,\n        showsSeparator: Bool = true,\n        onTap: (() -> Void)? = nil\n    ) {\n        self.init(\n            title: title, subtitle: subtitle, systemImage: systemImage,\n            tint: tint, showsSeparator: showsSeparator, onTap: onTap\n        ) { EmptyView() }\n    }\n}\n\n/// The usual trailing affordance for a row that pushes a screen.\npublic struct SKChevron: View {\n    public init() {}\n    public var body: some View {\n        Image(systemName: \"chevron.right\")\n            .font(SK.Icon.symbol(SK.Icon.sm))\n            .foregroundStyle(SK.Palette.labelTertiary)\n    }\n}\n\n#Preview(\"SKRow\") {\n    VStack(spacing: 0) {\n        SKRow(title: \"Wi-Fi\", subtitle: \"HomeNetwork\", systemImage: \"wifi\") {\n            Text(\"On\").font(SK.Type_.callout).foregroundStyle(SK.Palette.labelSecondary)\n        }\n        SKRow(title: \"Account\", systemImage: \"person.fill\", onTap: {}) { SKChevron() }\n        SKRow(title: \"Storage\", systemImage: \"internaldrive.fill\") {\n            Text(\"42 GB\").font(SK.Type_.callout).foregroundStyle(SK.Palette.labelSecondary)\n        }\n        SKRow(title: \"Sign Out\", systemImage: \"arrow.right.square\",\n              tint: SK.Palette.danger, showsSeparator: false, onTap: {})\n    }\n    .skSurface(.bordered, radius: SK.Radius.lg)\n    .padding(SK.Space.lg)\n    .frame(maxHeight: .infinity)\n    .background(SK.Palette.surfaceSunken)\n}\n"
+    }
+  ],
+  "variants": [
+    {
+      "id": "plain",
+      "title": "Plain",
+      "tier": "free"
+    },
+    {
+      "id": "tappable",
+      "title": "Tappable",
+      "tier": "free"
+    }
+  ],
+  "usage": "SKRow(title: \"Wi-Fi\", subtitle: \"Home\", systemImage: \"wifi\") { Text(\"On\") }\nSKRow(title: \"Account\", systemImage: \"person.fill\", onTap: { })\nSKRow(title: \"Last\", showsSeparator: false)",
+  "docs": "https://theswiftk.it.com/swiftui/row",
+  "keywords": [
+    "swiftui list row",
+    "ios list row",
+    "swiftui custom row"
+  ],
+  "meta": {
+    "searchVolume": 140
+  }
+}

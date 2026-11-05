@@ -1,0 +1,44 @@
+{
+  "$schema": "https://theswiftk.it.com/ui/schema/registry-item.json",
+  "name": "sk-message-actions",
+  "type": "registry:component",
+  "title": "Message Actions",
+  "description": "Copy, regenerate and rate under a reply. Copy confirms in place with a tick and the row does not resize; the rating is exclusive and latching, and tapping the lit thumb clears it. Deliberately quiet \u2014 it sits under every reply, so anything louder competes with the reply.",
+  "author": "Ahmed Gagan",
+  "tier": "free",
+  "platforms": {
+    "iOS": "17.0",
+    "macOS": "14.0"
+  },
+  "categories": [
+    "ai"
+  ],
+  "dependencies": [],
+  "registryDependencies": [
+    "foundation"
+  ],
+  "files": [
+    {
+      "path": "Sources/SwiftKitUI/Components/SKMessageActions.swift",
+      "target": "SwiftKitUI/SKMessageActions.swift",
+      "type": "registry:component",
+      "lines": 172,
+      "content": "//\n//  SKMessageActions.swift\n//  Swift Kit UI\n//\n//  Requires: SwiftKitUI.swift\n//\n//  Copy, regenerate and rate \u2014 the row under an assistant reply.\n//\n//  Two decisions carry this component. First, copy confirms *in place*: the\n//  glyph becomes a tick for a moment and the row does not resize, because a\n//  toast for something this small is a sledgehammer and a button that silently\n//  does nothing visible gets pressed three times.\n//\n//  Second, the rating is exclusive and latching. Thumbs that can both be lit,\n//  or that reset on the next render, produce feedback data you cannot use \u2014\n//  and users notice immediately that their answer did not stick.\n//\n//  The row is deliberately quiet: tertiary glyphs, no fills, no borders. It\n//  lives under every single reply, so anything louder competes with the reply\n//  itself.\n//\n//  Usage:\n//      SKMessageActions(copyText: reply, feedback: $rating, onRegenerate: retry)\n//\n\nimport SwiftUI\n#if canImport(UIKit)\nimport UIKit\n#elseif canImport(AppKit)\nimport AppKit\n#endif\n\npublic enum SKMessageFeedback: Sendable, Hashable {\n    case none, positive, negative\n}\n\npublic struct SKMessageActions: View {\n    private let copyText: String?\n    @Binding private var feedback: SKMessageFeedback\n    private let onRegenerate: (() -> Void)?\n    private let onShare: (() -> Void)?\n    private let onCopy: (() -> Void)?\n\n    @State private var copied = false\n\n    public init(\n        copyText: String? = nil,\n        feedback: Binding<SKMessageFeedback> = .constant(.none),\n        onRegenerate: (() -> Void)? = nil,\n        onShare: (() -> Void)? = nil,\n        onCopy: (() -> Void)? = nil\n    ) {\n        self.copyText = copyText\n        self._feedback = feedback\n        self.onRegenerate = onRegenerate\n        self.onShare = onShare\n        self.onCopy = onCopy\n    }\n\n    public var body: some View {\n        HStack(spacing: SK.Space.xs) {\n            if copyText != nil {\n                action(\n                    symbol: copied ? \"checkmark\" : \"doc.on.doc\",\n                    label: copied ? \"Copied\" : \"Copy\",\n                    tint: copied ? SK.Palette.success : SK.Palette.labelTertiary,\n                    perform: copy\n                )\n            }\n\n            if let onRegenerate {\n                action(symbol: \"arrow.clockwise\", label: \"Regenerate\", tint: SK.Palette.labelTertiary) {\n                    onRegenerate()\n                    SK.Haptic.play(.light)\n                }\n            }\n\n            if let onShare {\n                action(symbol: \"square.and.arrow.up\", label: \"Share\", tint: SK.Palette.labelTertiary) {\n                    onShare()\n                    SK.Haptic.play(.light)\n                }\n            }\n\n            action(\n                symbol: feedback == .positive ? \"hand.thumbsup.fill\" : \"hand.thumbsup\",\n                label: \"Good response\",\n                tint: feedback == .positive ? SK.Palette.success : SK.Palette.labelTertiary\n            ) {\n                // Tapping the lit thumb clears it: a rating you cannot take\n                // back is one people stop giving.\n                feedback = feedback == .positive ? .none : .positive\n                SK.Haptic.play(feedback == .positive ? .success : .light)\n            }\n\n            action(\n                symbol: feedback == .negative ? \"hand.thumbsdown.fill\" : \"hand.thumbsdown\",\n                label: \"Bad response\",\n                tint: feedback == .negative ? SK.Palette.danger : SK.Palette.labelTertiary\n            ) {\n                feedback = feedback == .negative ? .none : .negative\n                SK.Haptic.play(.light)\n            }\n        }\n        .skAnimation(.snap, value: feedback)\n        .skAnimation(.snap, value: copied)\n    }\n\n    private func action(\n        symbol: String,\n        label: String,\n        tint: Color,\n        perform: @escaping () -> Void\n    ) -> some View {\n        Button(action: perform) {\n            Image(systemName: symbol)\n                .font(SK.Icon.symbol(SK.Icon.sm))\n                .foregroundStyle(tint)\n                // The glyph is small; the target is not. 30pt with the row's\n                // own padding clears Apple's minimum without the icons\n                // drifting apart visually.\n                .frame(width: 30, height: 30)\n                .contentShape(Rectangle())\n        }\n        .buttonStyle(.skPress(scale: 0.85, haptic: nil))\n        .accessibilityLabel(label)\n    }\n\n    private func copy() {\n        guard let copyText else { return }\n        #if canImport(UIKit) && !os(tvOS) && !os(watchOS)\n        UIPasteboard.general.string = copyText\n        #elseif canImport(AppKit)\n        NSPasteboard.general.clearContents()\n        NSPasteboard.general.setString(copyText, forType: .string)\n        #endif\n        onCopy?()\n        SK.Haptic.play(.success)\n        copied = true\n        Task {\n            try? await Task.sleep(for: .seconds(1.6))\n            copied = false\n        }\n    }\n}\n\n#Preview(\"SKMessageActions\") {\n    @Previewable @State var rating: SKMessageFeedback = .none\n\n    VStack(alignment: .leading, spacing: SK.Space.md) {\n        Text(\"Annual plans now account for 61% of new subscriptions, up from 44% in Q2. Monthly conversion was flat, so the shift looks like pricing rather than demand.\")\n            .font(SK.Type_.body)\n            .foregroundStyle(SK.Palette.label)\n            .fixedSize(horizontal: false, vertical: true)\n\n        SKMessageActions(\n            copyText: \"Annual plans now account for 61% of new subscriptions.\",\n            feedback: $rating,\n            onRegenerate: {},\n            onShare: {}\n        )\n        .padding(.leading, -SK.Space.sm)\n\n        Text(\"Rating: \\(String(describing: rating))\")\n            .font(SK.Type_.caption)\n            .foregroundStyle(SK.Palette.labelTertiary)\n    }\n    .padding(SK.Space.xl)\n    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)\n    .background(SK.Palette.surface)\n}\n"
+    }
+  ],
+  "variants": [
+    {
+      "id": "default",
+      "title": "Actions",
+      "tier": "free"
+    }
+  ],
+  "usage": "SKMessageActions(copyText: reply, feedback: $rating, onRegenerate: retry)",
+  "docs": "https://theswiftk.it.com/swiftui/message-actions",
+  "keywords": [
+    "swiftui message actions",
+    "swiftui copy button",
+    "swiftui feedback buttons",
+    "swiftui thumbs up down"
+  ]
+}

@@ -1,0 +1,44 @@
+{
+  "$schema": "https://theswiftk.it.com/ui/schema/registry-item.json",
+  "name": "sk-conversation-row",
+  "type": "registry:component",
+  "title": "Conversation Row",
+  "description": "A row for the conversation list, with a timestamp that adapts to age \u2014 a time today, a weekday this week, a date beyond. Unread is carried by weight and a dot, never by colour alone. Swiping is left to List, which already has the correct physics and accessibility.",
+  "author": "Ahmed Gagan",
+  "tier": "free",
+  "platforms": {
+    "iOS": "17.0",
+    "macOS": "14.0"
+  },
+  "categories": [
+    "ai"
+  ],
+  "dependencies": [],
+  "registryDependencies": [
+    "foundation"
+  ],
+  "files": [
+    {
+      "path": "Sources/SwiftKitUI/Components/SKConversationRow.swift",
+      "target": "SwiftKitUI/SKConversationRow.swift",
+      "type": "registry:component",
+      "lines": 183,
+      "content": "//\n//  SKConversationRow.swift\n//  Swift Kit UI\n//\n//  Requires: SwiftKitUI.swift\n//\n//  A row in the conversation list \u2014 the screen people actually live in once\n//  they have used an assistant for a week.\n//\n//  The timestamp adapts to age rather than printing a date: a time for today,\n//  a weekday inside the last week, a date beyond that. It is a small thing and\n//  it is the difference between a list you can scan and a column of\n//  \"28/09/2026\" that all looks the same.\n//\n//  Unread is carried by weight and a dot, never by colour alone \u2014 a\n//  colour-only unread state is invisible to a meaningful share of users, and\n//  this is precisely the kind of state that must not be.\n//\n//  Swiping is left to the list. `List` already has `.swipeActions` with the\n//  correct physics and accessibility, and a hand-rolled swipe inside the row\n//  fights it.\n//\n//  Usage:\n//      SKConversationRow(title: \"Q3 revenue\", preview: \"\u2026\", date: date,\n//                        isUnread: true) { open() }\n//\n\nimport SwiftUI\n\npublic struct SKConversationRow: View {\n    private let title: String\n    private let preview: String?\n    private let date: Date?\n    private let isUnread: Bool\n    private let isPinned: Bool\n    private let isSelected: Bool\n    private let systemImage: String?\n    private let onTap: (() -> Void)?\n\n    public init(\n        title: String,\n        preview: String? = nil,\n        date: Date? = nil,\n        isUnread: Bool = false,\n        isPinned: Bool = false,\n        isSelected: Bool = false,\n        systemImage: String? = nil,\n        onTap: (() -> Void)? = nil\n    ) {\n        self.title = title\n        self.preview = preview\n        self.date = date\n        self.isUnread = isUnread\n        self.isPinned = isPinned\n        self.isSelected = isSelected\n        self.systemImage = systemImage\n        self.onTap = onTap\n    }\n\n    public var body: some View {\n        Button {\n            onTap?()\n            SK.Haptic.play(.light)\n        } label: {\n            HStack(alignment: .top, spacing: SK.Space.md) {\n                if let systemImage {\n                    ZStack {\n                        RoundedRectangle(cornerRadius: SK.Radius.sm, style: .continuous)\n                            .fill(isSelected ? SK.Palette.accent : SK.Palette.fill)\n                            .frame(width: 34, height: 34)\n                        Image(systemName: systemImage)\n                            .font(SK.Icon.symbol(SK.Icon.sm))\n                            .foregroundStyle(isSelected ? Color.white : SK.Palette.labelSecondary)\n                    }\n                }\n\n                VStack(alignment: .leading, spacing: 3) {\n                    HStack(spacing: SK.Space.xs) {\n                        if isPinned {\n                            Image(systemName: \"pin.fill\")\n                                .font(SK.Icon.symbol(SK.Icon.xs))\n                                .foregroundStyle(SK.Palette.labelTertiary)\n                                .accessibilityLabel(\"Pinned\")\n                        }\n                        Text(title)\n                            .font(SK.Type_.callout)\n                            // Weight, not just colour \u2014 unread has to survive\n                            // a greyscale screenshot.\n                            .fontWeight(isUnread ? .bold : .medium)\n                            .foregroundStyle(SK.Palette.label)\n                            .lineLimit(1)\n                    }\n\n                    if let preview {\n                        Text(preview)\n                            .font(SK.Type_.caption)\n                            .foregroundStyle(isUnread ? SK.Palette.labelSecondary : SK.Palette.labelTertiary)\n                            .lineLimit(2)\n                            .multilineTextAlignment(.leading)\n                            .fixedSize(horizontal: false, vertical: true)\n                    }\n                }\n\n                Spacer(minLength: SK.Space.sm)\n\n                VStack(alignment: .trailing, spacing: SK.Space.xs + 2) {\n                    if let date {\n                        Text(stamp(for: date))\n                            .font(SK.Type_.caption)\n                            .foregroundStyle(SK.Palette.labelTertiary)\n                            .monospacedDigit()\n                    }\n                    if isUnread {\n                        Circle()\n                            .fill(SK.Palette.accent)\n                            .frame(width: 8, height: 8)\n                            .transition(.scale.combined(with: .opacity))\n                    }\n                }\n            }\n            .padding(.vertical, SK.Space.md)\n            .padding(.horizontal, SK.Space.lg)\n            .background(\n                isSelected ? SK.Palette.accentSoft : Color.clear,\n                in: RoundedRectangle(cornerRadius: SK.Radius.md, style: .continuous)\n            )\n            .contentShape(Rectangle())\n        }\n        .buttonStyle(.skPress(scale: 0.99, haptic: nil))\n        .skAnimation(.snap, value: isUnread)\n        .skAnimation(.snap, value: isSelected)\n        .accessibilityElement(children: .combine)\n        .accessibilityLabel(title)\n        .accessibilityValue(isUnread ? \"Unread. \\(preview ?? \"\")\" : (preview ?? \"\"))\n    }\n\n    /// Time today, weekday this week, date beyond. Printing a full date on\n    /// every row makes the column unscannable.\n    private func stamp(for date: Date) -> String {\n        let calendar = Calendar.current\n        if calendar.isDateInToday(date) {\n            return date.formatted(.dateTime.hour().minute())\n        }\n        if calendar.isDateInYesterday(date) {\n            return \"Yesterday\"\n        }\n        if let week = calendar.date(byAdding: .day, value: -7, to: .now), date > week {\n            return date.formatted(.dateTime.weekday(.abbreviated))\n        }\n        return date.formatted(.dateTime.day().month(.abbreviated))\n    }\n}\n\n#Preview(\"SKConversationRow\") {\n    ScrollView {\n        VStack(spacing: SK.Space.xxs) {\n            SKConversationRow(\n                title: \"Q3 revenue teardown\",\n                preview: \"Annual plans are 61% of new subscriptions \u2014 the mix shifted, demand did not.\",\n                date: .now,\n                isUnread: true,\n                isPinned: true,\n                systemImage: \"chart.line.uptrend.xyaxis\"\n            )\n            SKConversationRow(\n                title: \"Migration rollback plan\",\n                preview: \"Two rows rejected for a null tenant id; everything else moved cleanly.\",\n                date: Date(timeIntervalSinceNow: -3600 * 30),\n                isSelected: true,\n                systemImage: \"arrow.triangle.2.circlepath\"\n            )\n            SKConversationRow(\n                title: \"Onboarding copy\",\n                preview: \"Shorter second screen, and the permission ask moves after the first win.\",\n                date: Date(timeIntervalSinceNow: -3600 * 96),\n                systemImage: \"text.bubble\"\n            )\n        }\n        .padding(SK.Space.sm)\n    }\n    .background(SK.Palette.surface)\n}\n"
+    }
+  ],
+  "variants": [
+    {
+      "id": "default",
+      "title": "Row",
+      "tier": "free"
+    }
+  ],
+  "usage": "SKConversationRow(title: \"Q3 revenue\", preview: last, date: date,\n                  isUnread: true) { open() }",
+  "docs": "https://theswiftk.it.com/swiftui/conversation-row",
+  "keywords": [
+    "swiftui list row",
+    "swiftui chat list",
+    "swiftui conversation list",
+    "swiftui unread indicator"
+  ]
+}

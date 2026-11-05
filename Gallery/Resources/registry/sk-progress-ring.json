@@ -1,0 +1,51 @@
+{
+  "$schema": "https://theswiftk.it.com/ui/schema/registry-item.json",
+  "name": "sk-progress-ring",
+  "type": "registry:component",
+  "title": "Progress Ring",
+  "description": "A closed circular progress ring, determinate or indeterminate.",
+  "author": "Ahmed Gagan",
+  "tier": "free",
+  "platforms": {
+    "iOS": "17.0",
+    "macOS": "14.0"
+  },
+  "categories": [
+    "feedback"
+  ],
+  "dependencies": [],
+  "registryDependencies": [
+    "foundation"
+  ],
+  "files": [
+    {
+      "path": "Sources/SwiftKitUI/Components/SKProgressRing.swift",
+      "target": "SwiftKitUI/SKProgressRing.swift",
+      "type": "registry:component",
+      "lines": 96,
+      "content": "//\n//  SKProgressRing.swift\n//  Swift Kit UI\n//\n//  Requires: SwiftKitUI.swift\n//\n//  A closed circular progress ring, determinate or indeterminate.\n//\n//  The indeterminate mode spins a fixed arc rather than animating `trim`\n//  endpoints \u2014 rotating one layer is far cheaper than re-trimming a path 120\n//  times a second, and it is the difference between a smooth ring and a\n//  stuttering one on an older device.\n//\n//  Usage:\n//      SKProgressRing(value: 0.4)\n//      SKProgressRing()              // indeterminate\n//\n\nimport SwiftUI\n\npublic struct SKProgressRing: View {\n    private let value: Double?\n    private let tint: Color\n    private let lineWidth: CGFloat\n    private let showsPercentage: Bool\n\n    @State private var spin = false\n    @Environment(\\.accessibilityReduceMotion) private var reduceMotion\n\n    public init(\n        value: Double? = nil,\n        tint: Color = SK.Palette.accent,\n        lineWidth: CGFloat = 8,\n        showsPercentage: Bool = false\n    ) {\n        self.value = value\n        self.tint = tint\n        self.lineWidth = lineWidth\n        self.showsPercentage = showsPercentage\n    }\n\n    public var body: some View {\n        ZStack {\n            Circle()\n                .stroke(SK.Palette.fill, lineWidth: lineWidth)\n\n            if let value {\n                Circle()\n                    .trim(from: 0, to: min(max(value, 0), 1))\n                    .stroke(tint, style: StrokeStyle(lineWidth: lineWidth, lineCap: .round))\n                    .rotationEffect(.degrees(-90))\n                    .skAnimation(.settle, value: value)\n\n                if showsPercentage {\n                    Text(\"\\(Int(min(max(value, 0), 1) * 100))%\")\n                        .font(SK.Type_.numeric)\n                        .foregroundStyle(SK.Palette.label)\n                        .contentTransition(.numericText())\n                        .skAnimation(.snap, value: value)\n                }\n            } else {\n                Circle()\n                    .trim(from: 0, to: 0.22)\n                    .stroke(tint, style: StrokeStyle(lineWidth: lineWidth, lineCap: .round))\n                    .rotationEffect(.degrees(spin ? 360 : 0))\n                    .onAppear {\n                        guard !reduceMotion else { return }\n                        withAnimation(.linear(duration: 0.9).repeatForever(autoreverses: false)) {\n                            spin = true\n                        }\n                    }\n            }\n        }\n        .aspectRatio(1, contentMode: .fit)\n        .accessibilityElement()\n        .accessibilityLabel(value == nil ? \"Loading\" : \"Progress\")\n        .accessibilityValue(value.map { Text(\"\\(Int($0 * 100)) percent\") } ?? Text(\"\"))\n    }\n}\n\n#Preview(\"SKProgressRing\") {\n    @Previewable @State var progress = 0.35\n\n    VStack(spacing: SK.Space.xl) {\n        HStack(spacing: SK.Space.xl) {\n            SKProgressRing(value: progress, showsPercentage: true).frame(width: 96)\n            SKProgressRing(value: 0.8, tint: SK.Palette.success).frame(width: 64)\n            SKProgressRing().frame(width: 44)\n        }\n        Slider(value: $progress, in: 0...1).tint(SK.Palette.accent)\n    }\n    .padding(SK.Space.xl)\n    .frame(maxWidth: .infinity, maxHeight: .infinity)\n    .background(SK.Palette.surfaceSunken)\n}\n"
+    }
+  ],
+  "variants": [
+    {
+      "id": "determinate",
+      "title": "Determinate",
+      "tier": "free"
+    },
+    {
+      "id": "indeterminate",
+      "title": "Indeterminate",
+      "tier": "free"
+    }
+  ],
+  "usage": "SKProgressRing(value: 0.4)\nSKProgressRing()              // indeterminate",
+  "docs": "https://theswiftk.it.com/swiftui/progress-ring",
+  "keywords": [
+    "swiftui progress ring",
+    "swiftui circular progress",
+    "ios progress view"
+  ],
+  "meta": {
+    "searchVolume": 320
+  }
+}

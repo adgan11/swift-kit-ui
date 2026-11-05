@@ -1,0 +1,46 @@
+{
+  "$schema": "https://theswiftk.it.com/ui/schema/registry-item.json",
+  "name": "sk-navigation-bar",
+  "type": "registry:component",
+  "title": "Navigation Bar",
+  "description": "A navigation bar that fades in its background as content scrolls under it, rather than sitting on an opaque slab from the first pixel.",
+  "author": "Ahmed Gagan",
+  "tier": "free",
+  "platforms": {
+    "iOS": "17.0",
+    "macOS": "14.0"
+  },
+  "categories": [
+    "navigation"
+  ],
+  "dependencies": [],
+  "registryDependencies": [
+    "foundation"
+  ],
+  "files": [
+    {
+      "path": "Sources/SwiftKitUI/Components/SKNavigationBar.swift",
+      "target": "SwiftKitUI/SKNavigationBar.swift",
+      "type": "registry:component",
+      "lines": 143,
+      "content": "//\n//  SKNavigationBar.swift\n//  Swift Kit UI\n//\n//  Requires: SwiftKitUI.swift\n//\n//  A navigation bar that fades in its background as content scrolls under it,\n//  rather than sitting on an opaque slab from the first pixel.\n//\n//  Progress is driven by a scroll offset you pass in \u2014 the bar does not own a\n//  ScrollView. Components that swallow your scroll view are components you\n//  fight for the rest of the project.\n//\n//  Usage:\n//      SKNavigationBar(title: \"Settings\", scrollOffset: offset) {\n//          Button { } label: { Image(systemName: \"chevron.left\") }\n//      } trailing: {\n//          Button { } label: { Image(systemName: \"ellipsis\") }\n//      }\n//\n\nimport SwiftUI\n\npublic struct SKNavigationBar<Leading: View, Trailing: View>: View {\n    private let title: String\n    private let scrollOffset: CGFloat\n    private let threshold: CGFloat\n    private let leading: Leading\n    private let trailing: Trailing\n\n    public init(\n        title: String,\n        scrollOffset: CGFloat = 0,\n        threshold: CGFloat = 40,\n        @ViewBuilder leading: () -> Leading,\n        @ViewBuilder trailing: () -> Trailing\n    ) {\n        self.title = title\n        self.scrollOffset = scrollOffset\n        self.threshold = threshold\n        self.leading = leading()\n        self.trailing = trailing()\n    }\n\n    /// 0 at rest, 1 once scrolled past the threshold.\n    private var progress: CGFloat {\n        min(max(scrollOffset / threshold, 0), 1)\n    }\n\n    public var body: some View {\n        HStack(spacing: SK.Space.md) {\n            leading.frame(minWidth: SK.Icon.hitTarget, alignment: .leading)\n\n            Text(title)\n                .font(SK.Type_.headline)\n                .foregroundStyle(SK.Palette.label)\n                .lineLimit(1)\n                .frame(maxWidth: .infinity)\n                .opacity(progress)\n\n            trailing.frame(minWidth: SK.Icon.hitTarget, alignment: .trailing)\n        }\n        .padding(.horizontal, SK.Space.lg)\n        .frame(height: 52)\n        .background {\n            SK.Palette.surfaceElevated\n                .opacity(progress)\n                .overlay(alignment: .bottom) {\n                    Rectangle()\n                        .fill(SK.Palette.separator)\n                        .frame(height: SK.Stroke.hairline)\n                        .opacity(progress)\n                }\n                .ignoresSafeArea(edges: .top)\n        }\n        .skAnimation(.snap, value: progress > 0.5)\n        .accessibilityElement(children: .contain)\n        .accessibilityLabel(title)\n    }\n}\n\nextension SKNavigationBar where Trailing == EmptyView {\n    public init(title: String, scrollOffset: CGFloat = 0, threshold: CGFloat = 40,\n                @ViewBuilder leading: () -> Leading) {\n        self.init(title: title, scrollOffset: scrollOffset, threshold: threshold,\n                  leading: leading) { EmptyView() }\n    }\n}\n\nextension SKNavigationBar where Leading == EmptyView, Trailing == EmptyView {\n    public init(title: String, scrollOffset: CGFloat = 0, threshold: CGFloat = 40) {\n        self.init(title: title, scrollOffset: scrollOffset, threshold: threshold,\n                  leading: { EmptyView() }) { EmptyView() }\n    }\n}\n\n#Preview(\"SKNavigationBar\") {\n    @Previewable @State var offset: CGFloat = 0\n\n    VStack(spacing: 0) {\n        SKNavigationBar(title: \"Settings\", scrollOffset: offset) {\n            Image(systemName: \"chevron.left\")\n                .font(SK.Icon.symbol(SK.Icon.md, weight: .semibold))\n                .foregroundStyle(SK.Palette.accent)\n        } trailing: {\n            Image(systemName: \"ellipsis.circle\")\n                .font(SK.Icon.symbol(SK.Icon.md))\n                .foregroundStyle(SK.Palette.accent)\n        }\n\n        ScrollView {\n            VStack(alignment: .leading, spacing: SK.Space.lg) {\n                Text(\"Settings\").font(SK.Type_.display)\n                ForEach(0..<18, id: \\.self) { i in\n                    Text(\"Row \\(i + 1)\").font(SK.Type_.body)\n                }\n            }\n            .frame(maxWidth: .infinity, alignment: .leading)\n            .padding(SK.Space.lg)\n            .background {\n                GeometryReader { geo in\n                    Color.clear.preference(\n                        key: SKScrollOffsetKey.self,\n                        value: -geo.frame(in: .named(\"scroll\")).minY\n                    )\n                }\n            }\n        }\n        .coordinateSpace(name: \"scroll\")\n        .onPreferenceChange(SKScrollOffsetKey.self) { offset = $0 }\n    }\n    .background(SK.Palette.surfaceSunken)\n}\n\n/// Reports scroll offset upward. Public so callers can reuse it rather than\n/// redefining their own key with a clashing name.\npublic struct SKScrollOffsetKey: PreferenceKey {\n    public static let defaultValue: CGFloat = 0\n    public static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {\n        value = nextValue()\n    }\n}\n"
+    }
+  ],
+  "variants": [
+    {
+      "id": "default",
+      "title": "Default",
+      "tier": "free"
+    }
+  ],
+  "usage": "SKNavigationBar(title: \"Settings\", scrollOffset: offset) {\nButton { } label: { Image(systemName: \"chevron.left\") }\n} trailing: {\nButton { } label: { Image(systemName: \"ellipsis\") }\n}",
+  "docs": "https://theswiftk.it.com/swiftui/navigation-bar",
+  "keywords": [
+    "ios navigation bar",
+    "swiftui navigation bar",
+    "swiftui custom nav bar"
+  ],
+  "meta": {
+    "searchVolume": 210
+  }
+}

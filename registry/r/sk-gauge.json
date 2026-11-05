@@ -1,0 +1,46 @@
+{
+  "$schema": "https://theswiftk.it.com/ui/schema/registry-item.json",
+  "name": "sk-gauge",
+  "type": "registry:component",
+  "title": "Gauge",
+  "description": "An arc gauge. Speed, battery, score, storage.",
+  "author": "Ahmed Gagan",
+  "tier": "free",
+  "platforms": {
+    "iOS": "17.0",
+    "macOS": "14.0"
+  },
+  "categories": [
+    "data"
+  ],
+  "dependencies": [],
+  "registryDependencies": [
+    "foundation"
+  ],
+  "files": [
+    {
+      "path": "Sources/SwiftKitUI/Components/SKGauge.swift",
+      "target": "SwiftKitUI/SKGauge.swift",
+      "type": "registry:component",
+      "lines": 177,
+      "content": "//\n//  SKGauge.swift\n//  Swift Kit UI\n//\n//  Requires: SwiftKitUI.swift\n//\n//  A 270\u00b0 arc gauge. Speed, battery, score, storage.\n//\n//  Drawn with an explicit arc `Shape` rather than `Circle().trim()` rotated into\n//  place. `trim` starts at 3 o'clock, so getting the opening to the bottom means\n//  rotating the whole gauge \u2014 which rotates the label with it, and every caller\n//  then has to counter-rotate their own content by the same magic number. An\n//  arc that knows its own start angle keeps the label upright for free.\n//\n//  `animatableData` is on the shape, so the arc sweeps between values instead of\n//  redrawing.\n//\n//  Usage:\n//      SKGauge(value: 0.72) { Text(\"72%\") }\n//      SKGauge(value: cpu, in: 0...100, tint: .red) { Text(\"CPU\") }\n//\n\nimport SwiftUI\n\npublic struct SKGauge<Label: View>: View {\n    private let value: Double\n    private let range: ClosedRange<Double>\n    private let tint: Color\n    private let lineWidth: CGFloat\n    private let showsTicks: Bool\n    private let label: Label\n\n    private let startDegrees: Double = 135\n    private let sweepDegrees: Double = 270\n\n    public init(\n        value: Double,\n        in range: ClosedRange<Double> = 0...1,\n        tint: Color = SK.Palette.accent,\n        lineWidth: CGFloat = 12,\n        showsTicks: Bool = true,\n        @ViewBuilder label: () -> Label\n    ) {\n        self.value = value\n        self.range = range\n        self.tint = tint\n        self.lineWidth = lineWidth\n        self.showsTicks = showsTicks\n        self.label = label()\n    }\n\n    private var progress: Double {\n        let span = range.upperBound - range.lowerBound\n        guard span > 0 else { return 0 }\n        return min(max((value - range.lowerBound) / span, 0), 1)\n    }\n\n    public var body: some View {\n        ZStack {\n            if showsTicks { ticks }\n\n            SKGaugeArc(progress: 1, startDegrees: startDegrees, sweepDegrees: sweepDegrees)\n                .stroke(SK.Palette.fill, style: stroke)\n\n            SKGaugeArc(progress: progress, startDegrees: startDegrees, sweepDegrees: sweepDegrees)\n                .stroke(fill, style: stroke)\n\n            label\n        }\n        // Inset by half the stroke so the rounded cap is not clipped by the frame.\n        .padding(lineWidth / 2 + (showsTicks ? SK.Space.md : 0))\n        .aspectRatio(1, contentMode: .fit)\n        .skAnimation(.settle, value: value)\n        .accessibilityElement()\n        .accessibilityValue(Text(\"\\(Int(progress * 100)) percent\"))\n    }\n\n    private var stroke: StrokeStyle {\n        StrokeStyle(lineWidth: lineWidth, lineCap: .round)\n    }\n\n    /// Darker at the start, full tint at the end, so the sweep reads as filling\n    /// rather than as a flat band.\n    private var fill: AngularGradient {\n        AngularGradient(\n            colors: [tint.opacity(0.55), tint],\n            center: .center,\n            startAngle: .degrees(startDegrees),\n            endAngle: .degrees(startDegrees + sweepDegrees)\n        )\n    }\n\n    private var ticks: some View {\n        GeometryReader { geo in\n            let radius = min(geo.size.width, geo.size.height) / 2 + SK.Space.sm\n            ForEach(0..<11, id: \\.self) { i in\n                let t = Double(i) / 10\n                let angle = Angle.degrees(startDegrees + sweepDegrees * t)\n                let passed = t <= progress + 0.001\n\n                Capsule()\n                    .fill(passed ? tint.opacity(0.7) : SK.Palette.separator)\n                    .frame(width: 2, height: i % 5 == 0 ? 9 : 5)\n                    .offset(y: -radius)\n                    .rotationEffect(angle - .degrees(270))\n                    .position(x: geo.size.width / 2, y: geo.size.height / 2)\n            }\n        }\n    }\n}\n\nextension SKGauge where Label == EmptyView {\n    public init(value: Double, in range: ClosedRange<Double> = 0...1,\n                tint: Color = SK.Palette.accent, lineWidth: CGFloat = 12,\n                showsTicks: Bool = true) {\n        self.init(value: value, in: range, tint: tint,\n                  lineWidth: lineWidth, showsTicks: showsTicks) { EmptyView() }\n    }\n}\n\n/// An arc that knows where it starts, so nothing above it needs rotating.\nprivate struct SKGaugeArc: Shape {\n    var progress: Double\n    var startDegrees: Double\n    var sweepDegrees: Double\n\n    var animatableData: Double {\n        get { progress }\n        set { progress = newValue }\n    }\n\n    func path(in rect: CGRect) -> Path {\n        let clamped = min(max(progress, 0), 1)\n        guard clamped > 0 else { return Path() }\n        var path = Path()\n        path.addArc(\n            center: CGPoint(x: rect.midX, y: rect.midY),\n            radius: min(rect.width, rect.height) / 2,\n            startAngle: .degrees(startDegrees),\n            endAngle: .degrees(startDegrees + sweepDegrees * clamped),\n            clockwise: false\n        )\n        return path\n    }\n}\n\n#Preview(\"SKGauge\") {\n    @Previewable @State var value = 0.72\n\n    VStack(spacing: SK.Space.xl) {\n        SKGauge(value: value) {\n            VStack(spacing: -2) {\n                Text(\"\\(Int(value * 100))\")\n                    .font(.system(size: 40, weight: .bold, design: .rounded))\n                    .foregroundStyle(SK.Palette.label)\n                    .contentTransition(.numericText())\n                Text(\"SCORE\")\n                    .font(SK.Type_.caption)\n                    .foregroundStyle(SK.Palette.labelTertiary)\n            }\n        }\n        .frame(width: 180)\n\n        HStack(spacing: SK.Space.xl) {\n            SKGauge(value: 0.35, tint: SK.Palette.success, lineWidth: 9, showsTicks: false)\n                .frame(width: 84)\n            SKGauge(value: 0.9, tint: SK.Palette.danger, lineWidth: 9, showsTicks: false)\n                .frame(width: 84)\n        }\n\n        Slider(value: $value, in: 0...1).tint(SK.Palette.accent)\n    }\n    .padding(SK.Space.xl)\n    .frame(maxWidth: .infinity, maxHeight: .infinity)\n    .background(SK.Palette.surfaceSunken)\n}\n"
+    }
+  ],
+  "variants": [
+    {
+      "id": "default",
+      "title": "Default",
+      "tier": "free"
+    }
+  ],
+  "usage": "SKGauge(value: 0.72) { Text(\"72%\") }\nSKGauge(value: cpu, in: 0...100, tint: .red, label: { Text(\"CPU\") })",
+  "docs": "https://theswiftk.it.com/swiftui/gauge",
+  "keywords": [
+    "swiftui gauge",
+    "ios gauge",
+    "swiftui arc progress"
+  ],
+  "meta": {
+    "searchVolume": 320
+  }
+}

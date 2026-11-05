@@ -1,0 +1,49 @@
+{
+  "$schema": "https://theswiftk.it.com/ui/schema/registry-item.json",
+  "name": "sk-prompt-suggestions",
+  "type": "registry:component",
+  "title": "Prompt Suggestions",
+  "description": "The starter prompts on an empty assistant screen. They arrive on a 45ms stagger \u2014 slow enough to read as sequence, fast enough that nobody waits. Wrapped by default via a custom flow layout, because a horizontal rail hides the fourth suggestion off screen and a suggestion nobody sees does no work.",
+  "author": "Ahmed Gagan",
+  "tier": "free",
+  "platforms": {
+    "iOS": "17.0",
+    "macOS": "14.0"
+  },
+  "categories": [
+    "ai"
+  ],
+  "dependencies": [],
+  "registryDependencies": [
+    "foundation"
+  ],
+  "files": [
+    {
+      "path": "Sources/SwiftKitUI/Components/SKPromptSuggestions.swift",
+      "target": "SwiftKitUI/SKPromptSuggestions.swift",
+      "type": "registry:component",
+      "lines": 192,
+      "content": "//\n//  SKPromptSuggestions.swift\n//  Swift Kit UI\n//\n//  Requires: SwiftKitUI.swift\n//\n//  The starter prompts on an empty assistant screen, and the follow-ups after a\n//  reply.\n//\n//  This is the highest-leverage surface in a chat app and it is almost always\n//  an afterthought. A blank composer asks the user to invent a use case for\n//  your product on the spot; four concrete suggestions teach it in a second.\n//\n//  They arrive on a stagger \u2014 roughly 45ms apart \u2014 which is slow enough to read\n//  as sequence and fast enough that nobody waits. Appearing all at once is not\n//  wrong exactly, it just throws away the one moment where the eye will follow\n//  a list in order.\n//\n//  `.wrapped` is the default because on a phone a horizontal rail hides the\n//  fourth suggestion off-screen, and a suggestion nobody sees does no work.\n//\n//  Usage:\n//      SKPromptSuggestions([\"Summarise this thread\", \"Draft a reply\"]) { send($0) }\n//      SKPromptSuggestions(prompts, layout: .rail, onSelect: send)\n//\n\nimport SwiftUI\n\npublic struct SKPrompt: Identifiable, Sendable, Hashable {\n    public let id: String\n    public let text: String\n    public let systemImage: String?\n\n    public init(_ text: String, systemImage: String? = nil, id: String? = nil) {\n        self.id = id ?? text\n        self.text = text\n        self.systemImage = systemImage\n    }\n}\n\npublic struct SKPromptSuggestions: View {\n    public enum Layout: Sendable { case wrapped, rail }\n\n    private let prompts: [SKPrompt]\n    private let layout: Layout\n    private let onSelect: (SKPrompt) -> Void\n\n    @Environment(\\.accessibilityReduceMotion) private var reduceMotion\n    @State private var shown = false\n\n    public init(\n        _ prompts: [SKPrompt],\n        layout: Layout = .wrapped,\n        onSelect: @escaping (SKPrompt) -> Void\n    ) {\n        self.prompts = prompts\n        self.layout = layout\n        self.onSelect = onSelect\n    }\n\n    public init(\n        _ texts: [String],\n        layout: Layout = .wrapped,\n        onSelect: @escaping (String) -> Void\n    ) {\n        self.init(texts.map { SKPrompt($0) }, layout: layout) { onSelect($0.text) }\n    }\n\n    public var body: some View {\n        Group {\n            switch layout {\n            case .rail:\n                ScrollView(.horizontal, showsIndicators: false) {\n                    HStack(spacing: SK.Space.sm) { chips }\n                        .padding(.horizontal, SK.Space.lg)\n                }\n                // Cancels the rail's own scroll gesture hijacking the vertical\n                // scroll of the transcript it usually sits inside.\n                .scrollBounceBehavior(.basedOnSize, axes: .horizontal)\n\n            case .wrapped:\n                SKPromptFlow(spacing: SK.Space.sm) { chips }\n            }\n        }\n        .onAppear { shown = true }\n    }\n\n    private var chips: some View {\n        ForEach(Array(prompts.enumerated()), id: \\.element.id) { index, prompt in\n            Button {\n                onSelect(prompt)\n                SK.Haptic.play(.light)\n            } label: {\n                HStack(spacing: SK.Space.xs + 2) {\n                    if let symbol = prompt.systemImage {\n                        Image(systemName: symbol)\n                            .font(SK.Icon.symbol(SK.Icon.xs, weight: .semibold))\n                            .foregroundStyle(SK.Palette.accent)\n                    }\n                    Text(prompt.text)\n                        .font(SK.Type_.caption)\n                        .foregroundStyle(SK.Palette.label)\n                        .lineLimit(1)\n                }\n                .padding(.horizontal, SK.Space.md)\n                .padding(.vertical, SK.Space.sm)\n                .background(SK.Palette.fill, in: Capsule())\n                .overlay {\n                    Capsule().strokeBorder(SK.Palette.separator, lineWidth: SK.Stroke.thin)\n                }\n            }\n            .buttonStyle(.skPress(scale: 0.96, haptic: nil))\n            .opacity(shown ? 1 : 0)\n            .offset(y: shown ? 0 : 10)\n            // `skAnimation` has no delay parameter, so the stagger is applied\n            // to the resolved curve directly \u2014 still routed through SKMotion,\n            // and still nil under Reduce Motion.\n            .animation(\n                SKMotion.settle.resolved(reduceMotion: reduceMotion)?\n                    .delay(Double(index) * 0.045),\n                value: shown\n            )\n        }\n    }\n}\n\n/// Minimal flow layout: lays chips left to right and wraps.\n///\n/// `LazyVGrid` cannot do this \u2014 its columns are fixed, so \"Summarise\" and\n/// \"Draft a reply to the procurement thread\" would be given identical widths\n/// and the short one would sit in a puddle of empty space.\nprivate struct SKPromptFlow: SwiftUI.Layout {\n    var spacing: CGFloat\n\n    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {\n        let maxWidth = proposal.width ?? .infinity\n        var x: CGFloat = 0, y: CGFloat = 0, rowHeight: CGFloat = 0\n\n        for subview in subviews {\n            let size = subview.sizeThatFits(.unspecified)\n            if x > 0, x + size.width > maxWidth {\n                x = 0\n                y += rowHeight + spacing\n                rowHeight = 0\n            }\n            x += size.width + spacing\n            rowHeight = max(rowHeight, size.height)\n        }\n        return CGSize(width: proposal.width ?? x, height: y + rowHeight)\n    }\n\n    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {\n        var x = bounds.minX, y = bounds.minY, rowHeight: CGFloat = 0\n\n        for subview in subviews {\n            let size = subview.sizeThatFits(.unspecified)\n            if x > bounds.minX, x + size.width > bounds.maxX {\n                x = bounds.minX\n                y += rowHeight + spacing\n                rowHeight = 0\n            }\n            subview.place(at: CGPoint(x: x, y: y), proposal: ProposedViewSize(size))\n            x += size.width + spacing\n            rowHeight = max(rowHeight, size.height)\n        }\n    }\n}\n\n#Preview(\"SKPromptSuggestions\") {\n    @Previewable @State var picked = \"Nothing yet\"\n\n    VStack(alignment: .leading, spacing: SK.Space.xl) {\n        SKPromptSuggestions([\n            SKPrompt(\"Summarise this thread\", systemImage: \"text.alignleft\"),\n            SKPrompt(\"Draft a reply\", systemImage: \"arrowshape.turn.up.left\"),\n            SKPrompt(\"Find the contract terms\", systemImage: \"magnifyingglass\"),\n            SKPrompt(\"What changed since Friday?\", systemImage: \"clock.arrow.circlepath\"),\n        ]) { picked = $0.text }\n\n        Divider().overlay(SK.Palette.separator)\n\n        SKPromptSuggestions([\"Explain\", \"Shorten\", \"Add sources\"], layout: .rail) { picked = $0 }\n\n        Text(picked)\n            .font(SK.Type_.caption)\n            .foregroundStyle(SK.Palette.labelTertiary)\n    }\n    .padding(SK.Space.lg)\n    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)\n    .background(SK.Palette.surface)\n}\n"
+    }
+  ],
+  "variants": [
+    {
+      "id": "wrapped",
+      "title": "Wrapped",
+      "tier": "free"
+    },
+    {
+      "id": "rail",
+      "title": "Rail",
+      "tier": "free"
+    }
+  ],
+  "usage": "SKPromptSuggestions([\"Summarise this thread\", \"Draft a reply\"]) { send($0) }\nSKPromptSuggestions(prompts, layout: .rail, onSelect: send)",
+  "docs": "https://theswiftk.it.com/swiftui/prompt-suggestions",
+  "keywords": [
+    "swiftui flow layout",
+    "swiftui chip group",
+    "swiftui suggestion chips",
+    "swiftui wrapping hstack"
+  ]
+}

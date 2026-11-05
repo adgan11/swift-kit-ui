@@ -1,0 +1,49 @@
+{
+  "$schema": "https://theswiftk.it.com/ui/schema/registry-item.json",
+  "name": "sk-citation-chip",
+  "type": "registry:component",
+  "title": "Citation Chip",
+  "description": "An inline source marker sized to sit inside a sentence without breaking its rhythm, with a fixed minimum width so one- and two-digit citations do not jitter the line. Tapping opens a popover rather than pushing a screen, and stays a popover on iPhone.",
+  "author": "Ahmed Gagan",
+  "tier": "free",
+  "platforms": {
+    "iOS": "17.0",
+    "macOS": "14.0"
+  },
+  "categories": [
+    "ai"
+  ],
+  "dependencies": [],
+  "registryDependencies": [
+    "foundation"
+  ],
+  "files": [
+    {
+      "path": "Sources/SwiftKitUI/Components/SKCitationChip.swift",
+      "target": "SwiftKitUI/SKCitationChip.swift",
+      "type": "registry:component",
+      "lines": 185,
+      "content": "//\n//  SKCitationChip.swift\n//  Swift Kit UI\n//\n//  Requires: SwiftKitUI.swift\n//\n//  An inline source marker that opens the source.\n//\n//  Citations are the difference between an assistant people check and one they\n//  either trust blindly or not at all. The constraint is that the marker has to\n//  sit *inside* a sentence without wrecking its rhythm \u2014 so it is sized to the\n//  caption ramp, given a fixed minimum width so `1` and `12` do not jitter the\n//  line, and raised slightly to sit like a superscript rather than a button\n//  dropped into the paragraph.\n//\n//  Tapping opens a popover rather than pushing a screen. A citation is a\n//  glance, and a glance should not cost a navigation stack \u2014 on iPhone\n//  `presentationCompactAdaptation` keeps it a popover instead of letting it\n//  become a full sheet.\n//\n//  Usage:\n//      SKCitationChip(index: 1, source: source)\n//      SKCitationChip(source: source, style: .domain)\n//\n\nimport SwiftUI\n\npublic struct SKCitationSource: Identifiable, Sendable, Hashable {\n    public let id: String\n    public let title: String\n    public let domain: String\n    public let snippet: String?\n    public let url: URL?\n\n    public init(\n        id: String = UUID().uuidString,\n        title: String,\n        domain: String,\n        snippet: String? = nil,\n        url: URL? = nil\n    ) {\n        self.id = id\n        self.title = title\n        self.domain = domain\n        self.snippet = snippet\n        self.url = url\n    }\n}\n\npublic struct SKCitationChip: View {\n    public enum Style: Sendable { case numbered, domain }\n\n    private let index: Int?\n    private let source: SKCitationSource\n    private let style: Style\n\n    @State private var showing = false\n\n    public init(index: Int? = nil, source: SKCitationSource, style: Style = .numbered) {\n        self.index = index\n        self.source = source\n        self.style = style\n    }\n\n    public var body: some View {\n        Button {\n            showing = true\n            SK.Haptic.play(.light)\n        } label: {\n            label\n        }\n        .buttonStyle(.skPress(scale: 0.9, haptic: nil))\n        .popover(isPresented: $showing) {\n            card\n                .frame(idealWidth: 280)\n                .presentationCompactAdaptation(.popover)\n        }\n        .accessibilityLabel(\"Source: \\(source.title), \\(source.domain)\")\n    }\n\n    @ViewBuilder\n    private var label: some View {\n        switch style {\n        case .numbered:\n            Text(index.map(String.init) ?? \"\\u{2022}\")\n                .font(SK.Type_.caption)\n                .monospacedDigit()\n                .foregroundStyle(SK.Palette.accent)\n                // Fixed width so a two-digit citation does not shove the\n                // sentence around it.\n                .frame(minWidth: 17, minHeight: 17)\n                .background(SK.Palette.accentSoft, in: RoundedRectangle(cornerRadius: 5, style: .continuous))\n                .baselineOffset(3)\n\n        case .domain:\n            HStack(spacing: SK.Space.xs) {\n                Image(systemName: \"link\")\n                    .font(SK.Icon.symbol(SK.Icon.xs, weight: .bold))\n                Text(source.domain)\n                    .font(SK.Type_.caption)\n                    .lineLimit(1)\n            }\n            .foregroundStyle(SK.Palette.accent)\n            .padding(.horizontal, SK.Space.sm)\n            .padding(.vertical, SK.Space.xxs + 1)\n            .background(SK.Palette.accentSoft, in: Capsule())\n        }\n    }\n\n    private var card: some View {\n        VStack(alignment: .leading, spacing: SK.Space.sm) {\n            HStack(spacing: SK.Space.xs) {\n                Image(systemName: \"globe\")\n                    .font(SK.Icon.symbol(SK.Icon.xs))\n                Text(source.domain)\n                    .font(SK.Type_.caption)\n            }\n            .foregroundStyle(SK.Palette.labelTertiary)\n\n            Text(source.title)\n                .font(SK.Type_.headline)\n                .foregroundStyle(SK.Palette.label)\n                .fixedSize(horizontal: false, vertical: true)\n\n            if let snippet = source.snippet {\n                Text(snippet)\n                    .font(SK.Type_.caption)\n                    .foregroundStyle(SK.Palette.labelSecondary)\n                    .lineLimit(4)\n                    .fixedSize(horizontal: false, vertical: true)\n            }\n\n            if let url = source.url {\n                Link(destination: url) {\n                    HStack(spacing: SK.Space.xs) {\n                        Text(\"Open\")\n                        Image(systemName: \"arrow.up.right\")\n                            .font(SK.Icon.symbol(SK.Icon.xs, weight: .bold))\n                    }\n                    .font(SK.Type_.callout)\n                    .foregroundStyle(SK.Palette.accent)\n                }\n            }\n        }\n        .padding(SK.Space.lg)\n        .frame(maxWidth: 300, alignment: .leading)\n    }\n}\n\n#Preview(\"SKCitationChip\") {\n    let sources = [\n        SKCitationSource(\n            title: \"SaaS Benchmarks 2026: Retention and Expansion\",\n            domain: \"openviewpartners.com\",\n            snippet: \"Median annual-plan mix rose to 58% among companies above $1M ARR, with churn concentrated in month-to-month cohorts.\",\n            url: URL(string: \"https://example.com\")\n        ),\n        SKCitationSource(\n            title: \"Quarterly revenue teardown\",\n            domain: \"chartmogul.com\",\n            snippet: \"Mix shift toward annual billing typically depresses reported MRR growth for one quarter.\"\n        ),\n    ]\n\n    VStack(alignment: .leading, spacing: SK.Space.xl) {\n        Text(\"Annual plans now account for 61% of new subscriptions, up from 44% in Q2.\")\n            .font(SK.Type_.body)\n            .foregroundStyle(SK.Palette.label)\n            .fixedSize(horizontal: false, vertical: true)\n\n        HStack(spacing: SK.Space.xs) {\n            Text(\"Cited:\")\n                .font(SK.Type_.caption)\n                .foregroundStyle(SK.Palette.labelTertiary)\n            SKCitationChip(index: 1, source: sources[0])\n            SKCitationChip(index: 2, source: sources[1])\n        }\n\n        SKCitationChip(source: sources[0], style: .domain)\n    }\n    .padding(SK.Space.xl)\n    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)\n    .background(SK.Palette.surface)\n}\n"
+    }
+  ],
+  "variants": [
+    {
+      "id": "numbered",
+      "title": "Numbered",
+      "tier": "free"
+    },
+    {
+      "id": "domain",
+      "title": "Domain",
+      "tier": "free"
+    }
+  ],
+  "usage": "SKCitationChip(index: 1, source: source)\nSKCitationChip(source: source, style: .domain)",
+  "docs": "https://theswiftk.it.com/swiftui/citation-chip",
+  "keywords": [
+    "swiftui citation ui",
+    "swiftui inline popover",
+    "swiftui source chip",
+    "ai citations swiftui"
+  ]
+}

@@ -1,0 +1,45 @@
+{
+  "$schema": "https://theswiftk.it.com/ui/schema/registry-item.json",
+  "name": "sk-stepper",
+  "type": "registry:component",
+  "title": "Stepper",
+  "description": "Minus / value / plus, with press-and-hold repeat that accelerates.",
+  "author": "Ahmed Gagan",
+  "tier": "free",
+  "platforms": {
+    "iOS": "17.0",
+    "macOS": "14.0"
+  },
+  "categories": [
+    "controls"
+  ],
+  "dependencies": [],
+  "registryDependencies": [
+    "foundation"
+  ],
+  "files": [
+    {
+      "path": "Sources/SwiftKitUI/Components/SKStepper.swift",
+      "target": "SwiftKitUI/SKStepper.swift",
+      "type": "registry:component",
+      "lines": 126,
+      "content": "//\n//  SKStepper.swift\n//  Swift Kit UI\n//\n//  Requires: SwiftKitUI.swift\n//\n//  Minus / value / plus, with press-and-hold repeat that accelerates.\n//\n//  The number uses `.contentTransition(.numericText())` so digits roll rather\n//  than pop \u2014 at hold speed a popping label reads as flicker.\n//\n//  Usage:\n//      SKStepper(value: $quantity, in: 1...99)\n//\n\nimport SwiftUI\n\npublic struct SKStepper: View {\n    @Binding private var value: Int\n    private let range: ClosedRange<Int>\n    private let stepBy: Int\n\n    @State private var repeatTask: Task<Void, Never>?\n    @Environment(\\.isEnabled) private var isEnabled\n\n    public init(value: Binding<Int>, in range: ClosedRange<Int> = 0...99, stepBy: Int = 1) {\n        self._value = value\n        self.range = range\n        self.stepBy = stepBy\n    }\n\n    public var body: some View {\n        HStack(spacing: 0) {\n            button(\"minus\", enabled: value > range.lowerBound, delta: -stepBy)\n\n            Text(\"\\(value)\")\n                .font(SK.Type_.numeric)\n                .foregroundStyle(SK.Palette.label)\n                .contentTransition(.numericText())\n                .skAnimation(.snap, value: value)\n                .frame(minWidth: 44)\n                .accessibilityHidden(true)\n\n            button(\"plus\", enabled: value < range.upperBound, delta: stepBy)\n        }\n        .padding(.horizontal, SK.Space.xs)\n        .frame(height: SK.Icon.hitTarget)\n        .background(SK.Palette.fill, in: Capsule(style: .continuous))\n        .opacity(isEnabled ? 1 : 0.45)\n        .accessibilityElement()\n        .accessibilityValue(Text(\"\\(value)\"))\n        .accessibilityAdjustableAction { direction in\n            switch direction {\n            case .increment: bump(stepBy)\n            case .decrement: bump(-stepBy)\n            @unknown default: break\n            }\n        }\n    }\n\n    private func button(_ symbol: String, enabled: Bool, delta: Int) -> some View {\n        Image(systemName: symbol)\n            .font(SK.Icon.symbol(SK.Icon.sm, weight: .bold))\n            .foregroundStyle(enabled ? SK.Palette.label : SK.Palette.labelTertiary)\n            .frame(width: SK.Icon.hitTarget, height: SK.Icon.hitTarget)\n            .contentShape(.rect)\n            .onLongPressGesture(minimumDuration: 0.35) {\n                // Long press begins the repeat; the tap case is handled below.\n                startRepeating(delta)\n            } onPressingChanged: { pressing in\n                if !pressing {\n                    stopRepeating()\n                }\n            }\n            .simultaneousGesture(\n                TapGesture().onEnded { bump(delta) }\n            )\n            .disabled(!enabled)\n            .accessibilityHidden(true)\n    }\n\n    private func bump(_ delta: Int) {\n        let next = min(max(value + delta, range.lowerBound), range.upperBound)\n        guard next != value else {\n            SK.Haptic.play(.rigid)   // hit the end of the range\n            return\n        }\n        value = next\n        SK.Haptic.play(.light)\n    }\n\n    private func startRepeating(_ delta: Int) {\n        stopRepeating()\n        repeatTask = Task { @MainActor in\n            var interval: Duration = .milliseconds(220)\n            while !Task.isCancelled {\n                bump(delta)\n                try? await Task.sleep(for: interval)\n                // Accelerate, but floor it so it never becomes uncontrollable.\n                interval = max(.milliseconds(45), interval - .milliseconds(35))\n            }\n        }\n    }\n\n    private func stopRepeating() {\n        repeatTask?.cancel()\n        repeatTask = nil\n    }\n}\n\n#Preview(\"SKStepper\") {\n    @Previewable @State var qty = 1\n    @Previewable @State var people = 12\n\n    VStack(spacing: SK.Space.xl) {\n        SKStepper(value: $qty, in: 1...20)\n        SKStepper(value: $people, in: 0...99, stepBy: 2)\n        SKStepper(value: .constant(5)).disabled(true)\n        Text(\"Hold to repeat\").font(SK.Type_.caption)\n            .foregroundStyle(SK.Palette.labelTertiary)\n    }\n    .padding(SK.Space.xl)\n    .frame(maxWidth: .infinity, maxHeight: .infinity)\n    .background(SK.Palette.surfaceSunken)\n}\n"
+    }
+  ],
+  "variants": [
+    {
+      "id": "default",
+      "title": "Default",
+      "tier": "free"
+    }
+  ],
+  "usage": "SKStepper(value: $quantity, in: 1...99)",
+  "docs": "https://theswiftk.it.com/swiftui/stepper",
+  "keywords": [
+    "ios stepper",
+    "swiftui stepper"
+  ],
+  "meta": {
+    "searchVolume": 320
+  }
+}

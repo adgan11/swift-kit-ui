@@ -1,0 +1,114 @@
+## Swift Kit UI components
+
+- [SwiftKitUI Foundation](https://theswiftk.it.com/ui/foundation) — Design tokens, the five-curve motion system, haptics, and surface styles including iOS 26 Liquid Glass. Every component depends on this and nothing else. Install it once.
+  - registry: https://theswiftk.it.com/ui/r/foundation.json
+- [Toggle](https://theswiftk.it.com/swiftui/toggle) — A toggle you can *drag*, not just tap. That one detail is most of why the system switch feels expensive and a hand-rolled one usually does not — the knob tracks your finger, squashes while held, and commits on release using gesture velocity rather than a naive midpoint test.
+  - registry: https://theswiftk.it.com/ui/r/sk-toggle.json
+- [Activity Indicator](https://theswiftk.it.com/swiftui/progressview) — Three loading indicators that are not the system spinner: bouncing dots, a pulsing arc, and equaliser bars.
+  - registry: https://theswiftk.it.com/ui/r/sk-activity-indicator.json
+- [Button](https://theswiftk.it.com/swiftui/button) — Five button roles on one interruptible press animation. The press uses a spring rather than a duration curve so a rapid double-tap does not queue up two animations and lag behind the finger — the second press retargets the first mid-flight.
+  - registry: https://theswiftk.it.com/ui/r/sk-button.json
+- [Custom Tab Bar](https://theswiftk.it.com/swiftui/custom-tab-bar) — A custom tab bar where the selection indicator *travels* between tabs rather than cutting. That is `matchedGeometryEffect` doing the work: one pill exists at a time and SwiftUI interpolates its frame, which is both cheaper and smoother than animating an offset you calculate yourself.
+  - registry: https://theswiftk.it.com/ui/r/sk-tab-bar.json
+- [Wheel Picker](https://theswiftk.it.com/swiftui/wheel-picker) — A horizontal ruler picker — the control you want for weight, age, duration, tempo. Values snap to centre and tick as they pass.
+  - registry: https://theswiftk.it.com/ui/r/sk-wheel-picker.json
+- [Alert](https://theswiftk.it.com/swiftui/alert) — A styled alert that can carry a text field — the thing the system alert technically supports but gives you no control over.
+  - registry: https://theswiftk.it.com/ui/r/sk-alert.json
+- [Slider](https://theswiftk.it.com/swiftui/slider) — A slider that grows under your thumb and ticks haptically as it crosses steps. The track thickens on contact — the same trick that makes the system volume slider feel physical.
+  - registry: https://theswiftk.it.com/ui/r/sk-slider.json
+- [Tooltip](https://theswiftk.it.com/swiftui/tooltip) — A pointed bubble anchored to whatever it is explaining. For onboarding coach-marks and "what does this do?" hints.
+  - registry: https://theswiftk.it.com/ui/r/sk-tooltip.json
+- [Glass Panel](https://theswiftk.it.com/swiftui/liquid-glass) — iOS 26 Liquid Glass, with a fallback that is actually worth shipping below iOS 26 rather than a flat rectangle.
+  - registry: https://theswiftk.it.com/ui/r/sk-glass-panel.json
+- [Color Swatch Picker](https://theswiftk.it.com/swiftui/color-picker) — A swatch grid. Use this instead of the system ColorPicker when you have a fixed brand palette — an eyedropper and an infinite colour wheel are the wrong affordance for "pick one of our eight accent colours".
+  - registry: https://theswiftk.it.com/ui/r/sk-color-swatch-picker.json
+- [Badge](https://theswiftk.it.com/swiftui/badge) — A small status pill.
+  - registry: https://theswiftk.it.com/ui/r/sk-badge.json
+- [Text Field](https://theswiftk.it.com/swiftui/textfield) — A text field with a label that rises out of the way on focus, a focus ring, and an error state that does not resize the layout when it appears.
+  - registry: https://theswiftk.it.com/ui/r/sk-text-field.json
+- [Segmented Control](https://theswiftk.it.com/swiftui/segmented-control) — The indicator slides between segments via matchedGeometryEffect rather than cutting. Same technique as the tab bar, deliberately — two controls that both express "one of these is selected" should move the same way.
+  - registry: https://theswiftk.it.com/ui/r/sk-segmented-control.json
+- [Card](https://theswiftk.it.com/swiftui/card) — A container with the kit's standard internal padding.
+  - registry: https://theswiftk.it.com/ui/r/sk-card.json
+- [Stepper](https://theswiftk.it.com/swiftui/stepper) — Minus / value / plus, with press-and-hold repeat that accelerates.
+  - registry: https://theswiftk.it.com/ui/r/sk-stepper.json
+- [Gauge](https://theswiftk.it.com/swiftui/gauge) — An arc gauge. Speed, battery, score, storage.
+  - registry: https://theswiftk.it.com/ui/r/sk-gauge.json
+- [Progress Ring](https://theswiftk.it.com/swiftui/progress-ring) — A closed circular progress ring, determinate or indeterminate.
+  - registry: https://theswiftk.it.com/ui/r/sk-progress-ring.json
+- [Neumorphic Card](https://theswiftk.it.com/swiftui/neumorphism) — Soft UI: two shadows, one light from the top-left and one dark from the bottom-right, so the surface appears extruded from its background.
+  - registry: https://theswiftk.it.com/ui/r/sk-neumorphic-card.json
+- [Toast](https://theswiftk.it.com/swiftui/toast) — A transient message, presented as a modifier so it overlays the whole screen instead of being wedged into your layout.
+  - registry: https://theswiftk.it.com/ui/r/sk-toast.json
+- [Search Bar](https://theswiftk.it.com/swiftui/search-bar) — Search field with a Cancel button that slides in on focus.
+  - registry: https://theswiftk.it.com/ui/r/sk-search-bar.json
+- [Navigation Bar](https://theswiftk.it.com/swiftui/navigation-bar) — A navigation bar that fades in its background as content scrolls under it, rather than sitting on an opaque slab from the first pixel.
+  - registry: https://theswiftk.it.com/ui/r/sk-navigation-bar.json
+- [Row](https://theswiftk.it.com/swiftui/row) — A list row: optional leading symbol, title, optional subtitle, and whatever you want on the trailing edge.
+  - registry: https://theswiftk.it.com/ui/r/sk-row.json
+- [Bottom Sheet](https://theswiftk.it.com/swiftui/sheet) — A draggable bottom sheet you can actually style — grabber, corner radius, backdrop and detents all yours.
+  - registry: https://theswiftk.it.com/ui/r/sk-bottom-sheet.json
+- [Section](https://theswiftk.it.com/swiftui/section) — A titled group. Pair with SKRow, or put anything else inside.
+  - registry: https://theswiftk.it.com/ui/r/sk-section.json
+- [Rating](https://theswiftk.it.com/swiftui/rating) — Star rating you can tap or drag across. Dragging is the part most implementations skip, and it is how people actually set a rating once they realise it works.
+  - registry: https://theswiftk.it.com/ui/r/sk-rating.json
+- [Chip](https://theswiftk.it.com/swiftui/chip) — A selectable tag. Filter bars, topic pickers, multi-select.
+  - registry: https://theswiftk.it.com/ui/r/sk-chip.json
+- [OTP Field](https://theswiftk.it.com/swiftui/otp-field) — One-time-code entry. A real hidden text field drives visible boxes, which is the only approach that keeps iOS SMS autofill working — per-box TextFields look right and then silently break the one feature that matters.
+  - registry: https://theswiftk.it.com/ui/r/sk-otp-field.json
+- [Accordion](https://theswiftk.it.com/swiftui/accordion) — Expand/collapse with the chevron rotating on the same spring as the height change, so the two read as one movement instead of two.
+  - registry: https://theswiftk.it.com/ui/r/sk-accordion.json
+- [Timeline](https://theswiftk.it.com/swiftui/timeline) — A vertical timeline: order status, activity feeds, onboarding progress.
+  - registry: https://theswiftk.it.com/ui/r/sk-timeline.json
+- [Avatar](https://theswiftk.it.com/swiftui/avatar) — Avatar with an initials fallback, an optional presence dot, and a stacked group variant.
+  - registry: https://theswiftk.it.com/ui/r/sk-avatar.json
+- [Pull To Refresh](https://theswiftk.it.com/swiftui/pull-to-refresh) — A pull-to-refresh indicator you can brand, unlike `.refreshable`'s fixed system spinner.
+  - registry: https://theswiftk.it.com/ui/r/sk-pull-to-refresh.json
+- [Icon Bubble](https://theswiftk.it.com/swiftui/icon-bubble) — A tinted container for an SF Symbol. The thing every settings row, feature list and empty state reinvents slightly differently.
+  - registry: https://theswiftk.it.com/ui/r/sk-icon-bubble.json
+- [Carousel](https://theswiftk.it.com/swiftui/carousel) — A snapping card carousel. Off-centre cards shrink and dim as they move away, which gives the row depth and makes the focused card unambiguous.
+  - registry: https://theswiftk.it.com/ui/r/sk-carousel.json
+- [Confetti](https://theswiftk.it.com/swiftui/confetti) — A celebration burst for purchases, streaks and completions.
+  - registry: https://theswiftk.it.com/ui/r/sk-confetti.json
+- [Empty State](https://theswiftk.it.com/swiftui/empty-state) — The screen you see when there is nothing to see. Most apps ship a blank view here, which reads as a bug rather than a state.
+  - registry: https://theswiftk.it.com/ui/r/sk-empty-state.json
+- [Floating Action Button](https://theswiftk.it.com/swiftui/floating-action-button) — A FAB that fans out secondary actions when expanded.
+  - registry: https://theswiftk.it.com/ui/r/sk-floating-action-button.json
+- [Page Indicator](https://theswiftk.it.com/swiftui/page-indicator) — Page dots where the active one stretches into a capsule instead of just changing colour. Tappable, so it doubles as navigation.
+  - registry: https://theswiftk.it.com/ui/r/sk-page-indicator.json
+- [Skeleton](https://theswiftk.it.com/swiftui/skeleton) — Placeholder shapes for loading states.
+  - registry: https://theswiftk.it.com/ui/r/sk-skeleton.json
+- [Side Menu](https://theswiftk.it.com/swiftui/side-menu) — A drawer that slides in from the edge, with the main content pushed and scaled behind it.
+  - registry: https://theswiftk.it.com/ui/r/sk-side-menu.json
+- [Sparkline](https://theswiftk.it.com/swiftui/sparkline) — A compact trend line for cards and rows — no axes, no legend, no chart framework. Optional gradient fill and a highlighted last point.
+  - registry: https://theswiftk.it.com/ui/r/sk-sparkline.json
+- [Chat Bubble](https://theswiftk.it.com/swiftui/chat-bubble) — A message bubble whose body and tail are one continuous path, so a border follows the silhouette instead of running around two shapes. Consecutive messages group: corners tighten on the sender's side and only the last bubble keeps its tail. Carries sending, sent and failed states, with retry on failure.
+  - registry: https://theswiftk.it.com/ui/r/sk-chat-bubble.json
+- [Streaming Text](https://theswiftk.it.com/swiftui/streaming-text) — Renders a model response at a steady reading cadence no matter how erratically the tokens arrive. It keeps a reveal cursor and drains toward the received length with a bounded catch-up rate, so a burst of forty tokens does not snap onto the screen and a stall does not freeze it. The caret is solid while glyphs land and blinks only while waiting.
+  - registry: https://theswiftk.it.com/ui/r/sk-streaming-text.json
+- [Chat Composer](https://theswiftk.it.com/swiftui/chat-composer) — A growing input bar whose trailing button changes job rather than multiplying: dictate when empty, send when there is a draft, stop while the model is answering. The field grows to a line limit then scrolls internally, so the send button can never be pushed off screen.
+  - registry: https://theswiftk.it.com/ui/r/sk-chat-composer.json
+- [Markdown View](https://theswiftk.it.com/swiftui/markdown-view) — Markdown rendered as real blocks — headings, lists, quotes, rules and fenced code — with inline parsing handed to Foundation so bold, links and inline code still work inside a bullet. Built to render mid-stream: an unterminated code fence is treated as an open code block rather than as literal backticks.
+  - registry: https://theswiftk.it.com/ui/r/sk-markdown-view.json
+- [Code Block](https://theswiftk.it.com/swiftui/code-block) — A code surface with copy-in-place confirmation, an optional gutter, and horizontal scrolling rather than wrapping. Highlighting is four token classes applied in priority order with range claiming, so a keyword inside a string stays a string.
+  - registry: https://theswiftk.it.com/ui/r/sk-code-block.json
+- [Reasoning Block](https://theswiftk.it.com/swiftui/reasoning-block) — The collapsible thinking disclosure, showing the line the model is currently on rather than a spinner. Collapsed it costs one line; expanded it is the full trace. When reasoning ends the header settles into the measured duration.
+  - registry: https://theswiftk.it.com/ui/r/sk-reasoning-block.json
+- [Tool Call Card](https://theswiftk.it.com/swiftui/tool-call-card) — Names the action an agent is taking while it takes it, with an indeterminate bar that proves the app is alive without pretending to measure progress. Running, success and failure states; arguments and results stay collapsed behind a disclosure.
+  - registry: https://theswiftk.it.com/ui/r/sk-tool-call-card.json
+- [Citation Chip](https://theswiftk.it.com/swiftui/citation-chip) — An inline source marker sized to sit inside a sentence without breaking its rhythm, with a fixed minimum width so one- and two-digit citations do not jitter the line. Tapping opens a popover rather than pushing a screen, and stays a popover on iPhone.
+  - registry: https://theswiftk.it.com/ui/r/sk-citation-chip.json
+- [Token Meter](https://theswiftk.it.com/swiftui/token-meter) — Quota usage that changes colour at 70% and 90%, where the copy changes and the upgrade action appears. A prompt to upgrade at 15% is an advert; the same prompt at 92% is help. The fill glides rather than snapping, so an expensive action is visibly expensive.
+  - registry: https://theswiftk.it.com/ui/r/sk-token-meter.json
+- [Model Picker](https://theswiftk.it.com/swiftui/model-picker) — Model selection in plain language: every row carries a subtitle saying what the trade is and a badge for fast, balanced or powerful, with the raw identifier kept in monospace for the people who want it. Locked models are shown rather than hidden, because a model the user cannot reach is the most persuasive upgrade prompt an AI app has.
+  - registry: https://theswiftk.it.com/ui/r/sk-model-picker.json
+- [Prompt Suggestions](https://theswiftk.it.com/swiftui/prompt-suggestions) — The starter prompts on an empty assistant screen. They arrive on a 45ms stagger — slow enough to read as sequence, fast enough that nobody waits. Wrapped by default via a custom flow layout, because a horizontal rail hides the fourth suggestion off screen and a suggestion nobody sees does no work.
+  - registry: https://theswiftk.it.com/ui/r/sk-prompt-suggestions.json
+- [Voice Orb](https://theswiftk.it.com/swiftui/voice-orb) — A microphone target whose ring reacts to real audio level, drawn in a single Canvas so 44 bars cost one draw instead of 44 layout passes. Uses asymmetric smoothing — fast attack, slow release — which is why it tracks speech instead of wobbling behind it, and two incommensurate waves so the ring never visibly loops.
+  - registry: https://theswiftk.it.com/ui/r/sk-voice-orb.json
+- [Message Actions](https://theswiftk.it.com/swiftui/message-actions) — Copy, regenerate and rate under a reply. Copy confirms in place with a tick and the row does not resize; the rating is exclusive and latching, and tapping the lit thumb clears it. Deliberately quiet — it sits under every reply, so anything louder competes with the reply.
+  - registry: https://theswiftk.it.com/ui/r/sk-message-actions.json
+- [Attachment Tray](https://theswiftk.it.com/swiftui/attachment-tray) — Files staged for sending, each with its own progress ring on the thumbnail rather than one shared bar — three uploads at three speeds cannot be described by a single percentage. Removal animates the remaining tiles closed so it is clear which one went.
+  - registry: https://theswiftk.it.com/ui/r/sk-attachment-tray.json
+- [Conversation Row](https://theswiftk.it.com/swiftui/conversation-row) — A row for the conversation list, with a timestamp that adapts to age — a time today, a weekday this week, a date beyond. Unread is carried by weight and a dot, never by colour alone. Swiping is left to List, which already has the correct physics and accessibility.
+  - registry: https://theswiftk.it.com/ui/r/sk-conversation-row.json

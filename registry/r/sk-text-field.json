@@ -1,0 +1,57 @@
+{
+  "$schema": "https://theswiftk.it.com/ui/schema/registry-item.json",
+  "name": "sk-text-field",
+  "type": "registry:component",
+  "title": "Text Field",
+  "description": "A text field with a label that rises out of the way on focus, a focus ring, and an error state that does not resize the layout when it appears.",
+  "author": "Ahmed Gagan",
+  "tier": "free",
+  "platforms": {
+    "iOS": "17.0",
+    "macOS": "14.0"
+  },
+  "categories": [
+    "inputs"
+  ],
+  "dependencies": [],
+  "registryDependencies": [
+    "foundation"
+  ],
+  "files": [
+    {
+      "path": "Sources/SwiftKitUI/Components/SKTextField.swift",
+      "target": "SwiftKitUI/SKTextField.swift",
+      "type": "registry:component",
+      "lines": 175,
+      "content": "//\n//  SKTextField.swift\n//  Swift Kit UI\n//\n//  Requires: SwiftKitUI.swift\n//\n//  A text field whose label rises out of the way on focus, with a focus ring and\n//  an error state that does not resize the layout when it appears.\n//\n//  Two things most floating-label fields get wrong, both fixed here:\n//\n//  1. The label must stay INSIDE the box. Offsetting it far enough to sit on the\n//     border means it collides with the stroke, and the collision is worst in\n//     exactly the state you look at most \u2014 focused, where the border is thick\n//     and tinted. The label travels within the field's own padding instead.\n//  2. The error slot reserves its height whether or not there is an error.\n//     Fields that grow on validation shove the rest of the form down while\n//     someone is still typing in them.\n//\n//  Usage:\n//      SKTextField(\"Email\", text: $email, systemImage: \"envelope\")\n//      SKTextField(\"Password\", text: $pw, isSecure: true, error: error)\n//\n\nimport SwiftUI\n\npublic struct SKTextField: View {\n    private let title: String\n    @Binding private var text: String\n    private let systemImage: String?\n    private let isSecure: Bool\n    private let error: String?\n    private let capitalization: SK.Capitalization?\n    private let keyboard: SK.Keyboard\n\n    @FocusState private var focused: Bool\n\n    public init(\n        _ title: String,\n        text: Binding<String>,\n        systemImage: String? = nil,\n        isSecure: Bool = false,\n        error: String? = nil,\n        autocapitalization: SK.Capitalization? = nil,\n        keyboard: SK.Keyboard = .default\n    ) {\n        self.title = title\n        self._text = text\n        self.systemImage = systemImage\n        self.isSecure = isSecure\n        self.error = error\n        self.capitalization = autocapitalization\n        self.keyboard = keyboard\n    }\n\n    private var isFloating: Bool { focused || !text.isEmpty }\n\n    private var borderColor: Color {\n        if error != nil { return SK.Palette.danger }\n        return focused ? SK.Palette.accent : SK.Palette.separator\n    }\n\n    private var labelColor: Color {\n        if error != nil { return SK.Palette.danger }\n        return focused ? SK.Palette.accent : SK.Palette.labelSecondary\n    }\n\n    public var body: some View {\n        VStack(alignment: .leading, spacing: SK.Space.xs) {\n            box\n            errorSlot\n        }\n    }\n\n    private var box: some View {\n        HStack(spacing: SK.Space.md) {\n            if let systemImage {\n                Image(systemName: systemImage)\n                    .font(SK.Icon.symbol(SK.Icon.md))\n                    .foregroundStyle(focused ? SK.Palette.accent : SK.Palette.labelTertiary)\n                    .frame(width: SK.Icon.lg)\n            }\n\n            // Label and field share one leading-aligned stack and slide within\n            // it, so neither can ever reach the border.\n            ZStack(alignment: .leading) {\n                Text(title)\n                    .font(isFloating ? SK.Type_.caption : SK.Type_.body)\n                    .foregroundStyle(labelColor)\n                    .offset(y: isFloating ? -13 : 0)\n                    .allowsHitTesting(false)\n                    .accessibilityHidden(true)\n\n                field\n                    .offset(y: isFloating ? 8 : 0)\n                    // Hidden until the label has moved, otherwise the caret\n                    // sits on top of the resting label.\n                    .opacity(isFloating ? 1 : 0)\n            }\n            .frame(height: 34)\n\n            if !text.isEmpty {\n                Button {\n                    text = \"\"\n                    SK.Haptic.play(.light)\n                } label: {\n                    Image(systemName: \"xmark.circle.fill\")\n                        .font(SK.Icon.symbol(SK.Icon.md))\n                        .foregroundStyle(SK.Palette.labelTertiary)\n                }\n                .buttonStyle(.plain)\n                .transition(.opacity.combined(with: .scale(scale: 0.7)))\n                .accessibilityLabel(\"Clear \\(title)\")\n            }\n        }\n        .padding(.horizontal, SK.Space.lg)\n        .padding(.vertical, SK.Space.md)\n        .background(SK.Palette.surface, in: RoundedRectangle(cornerRadius: SK.Radius.md, style: .continuous))\n        .overlay {\n            RoundedRectangle(cornerRadius: SK.Radius.md, style: .continuous)\n                .strokeBorder(borderColor, lineWidth: focused || error != nil ? SK.Stroke.thick : SK.Stroke.thin)\n        }\n        .skAnimation(.snap, value: isFloating)\n        .skAnimation(.snap, value: focused)\n        .skAnimation(.snap, value: error)\n        .contentShape(.rect)\n        .onTapGesture { focused = true }\n    }\n\n    @ViewBuilder\n    private var field: some View {\n        Group {\n            if isSecure {\n                SecureField(\"\", text: $text)\n            } else {\n                TextField(\"\", text: $text)\n            }\n        }\n        .font(SK.Type_.body)\n        .foregroundStyle(SK.Palette.label)\n        .focused($focused)\n        .skCapitalization(capitalization)\n        .skKeyboard(keyboard)\n        .autocorrectionDisabled(isSecure)\n    }\n\n    private var errorSlot: some View {\n        Text(error ?? \" \")\n            .font(SK.Type_.caption)\n            .foregroundStyle(SK.Palette.danger)\n            .padding(.leading, SK.Space.xs)\n            .opacity(error == nil ? 0 : 1)\n            .skAnimation(.snap, value: error)\n            .accessibilityHidden(error == nil)\n    }\n}\n\n#Preview(\"SKTextField\") {\n    @Previewable @State var email = \"\"\n    @Previewable @State var password = \"hunter2\"\n    @Previewable @State var name = \"Ahmed\"\n\n    VStack(spacing: SK.Space.md) {\n        SKTextField(\"Email\", text: $email, systemImage: \"envelope.fill\",\n                    autocapitalization: .never, keyboard: .email)\n        SKTextField(\"Password\", text: $password, systemImage: \"lock.fill\", isSecure: true)\n        SKTextField(\"Full name\", text: $name)\n        SKTextField(\"Username\", text: .constant(\"taken\"),\n                    error: \"That username is already in use.\")\n    }\n    .padding(SK.Space.xl)\n    .frame(maxWidth: .infinity, maxHeight: .infinity)\n    .background(SK.Palette.surfaceSunken)\n}\n"
+    }
+  ],
+  "variants": [
+    {
+      "id": "default",
+      "title": "Default",
+      "tier": "free"
+    },
+    {
+      "id": "secure",
+      "title": "Secure",
+      "tier": "free"
+    },
+    {
+      "id": "error",
+      "title": "Error",
+      "tier": "free"
+    }
+  ],
+  "usage": "SKTextField(\"Email\", text: $email, systemImage: \"envelope\")\nSKTextField(\"Password\", text: $pw, isSecure: true, error: error)",
+  "docs": "https://theswiftk.it.com/swiftui/textfield",
+  "keywords": [
+    "swiftui textfield",
+    "swiftui text field",
+    "ios text field",
+    "swiftui floating label"
+  ],
+  "meta": {
+    "searchVolume": 420
+  }
+}

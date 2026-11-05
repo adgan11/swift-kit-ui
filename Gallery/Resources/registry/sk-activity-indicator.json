@@ -1,0 +1,57 @@
+{
+  "$schema": "https://theswiftk.it.com/ui/schema/registry-item.json",
+  "name": "sk-activity-indicator",
+  "type": "registry:component",
+  "title": "Activity Indicator",
+  "description": "Three loading indicators that are not the system spinner: bouncing dots, a pulsing arc, and equaliser bars.",
+  "author": "Ahmed Gagan",
+  "tier": "free",
+  "platforms": {
+    "iOS": "17.0",
+    "macOS": "14.0"
+  },
+  "categories": [
+    "feedback"
+  ],
+  "dependencies": [],
+  "registryDependencies": [
+    "foundation"
+  ],
+  "files": [
+    {
+      "path": "Sources/SwiftKitUI/Components/SKActivityIndicator.swift",
+      "target": "SwiftKitUI/SKActivityIndicator.swift",
+      "type": "registry:component",
+      "lines": 123,
+      "content": "//\n//  SKActivityIndicator.swift\n//  Swift Kit UI\n//\n//  Requires: SwiftKitUI.swift\n//\n//  Three loading indicators that are not the system spinner: bouncing dots,\n//  a pulsing arc, and equaliser bars.\n//\n//  Each loops via `.repeatForever` keyed on a single `onAppear` flag, and each\n//  stops dead under Reduce Motion, showing a static state instead \u2014 an infinite\n//  animation is exactly what that setting exists to stop.\n//\n//  NOT `phaseAnimator(_:trigger:)`. That overload runs the phases ONCE per\n//  trigger change; with a trigger that never changes it plays once and freezes.\n//  Looks correct in a static screenshot, dead on device.\n//\n//  Usage:\n//      SKActivityIndicator()\n//      SKActivityIndicator(style: .bars, tint: .white)\n//\n\nimport SwiftUI\n\npublic struct SKActivityIndicator: View {\n    public enum Style: Sendable, CaseIterable { case dots, arc, bars }\n\n    private let style: Style\n    private let tint: Color\n    private let size: CGFloat\n\n    @State private var animating = false\n    @Environment(\\.accessibilityReduceMotion) private var reduceMotion\n\n    public init(style: Style = .dots, tint: Color = SK.Palette.accent, size: CGFloat = 40) {\n        self.style = style\n        self.tint = tint\n        self.size = size\n    }\n\n    public var body: some View {\n        Group {\n            switch style {\n            case .dots: dots\n            case .arc: arc\n            case .bars: bars\n            }\n        }\n        .frame(width: size, height: size)\n        .onAppear { animating = true }\n        .accessibilityElement()\n        .accessibilityLabel(\"Loading\")\n    }\n\n    private func loop(_ duration: Double, delay: Double = 0, autoreverses: Bool = true) -> Animation? {\n        guard !reduceMotion else { return nil }\n        return .easeInOut(duration: duration)\n            .repeatForever(autoreverses: autoreverses)\n            .delay(delay)\n    }\n\n    // MARK: dots\n\n    private var dots: some View {\n        HStack(spacing: size * 0.13) {\n            ForEach(0..<3, id: \\.self) { index in\n                Circle()\n                    .fill(tint)\n                    .frame(width: size * 0.24, height: size * 0.24)\n                    .offset(y: animating && !reduceMotion ? -size * 0.2 : size * 0.06)\n                    .opacity(animating && !reduceMotion ? 1 : 0.4)\n                    // Staggered so they ripple rather than pulse in unison.\n                    .animation(loop(0.44, delay: Double(index) * 0.13), value: animating)\n            }\n        }\n    }\n\n    // MARK: arc\n\n    private var arc: some View {\n        Circle()\n            .trim(from: 0, to: 0.26)\n            .stroke(tint, style: StrokeStyle(lineWidth: size * 0.1, lineCap: .round))\n            .rotationEffect(.degrees(animating && !reduceMotion ? 360 : 0))\n            .animation(\n                reduceMotion ? nil\n                    : .linear(duration: 0.85).repeatForever(autoreverses: false),\n                value: animating\n            )\n    }\n\n    // MARK: bars\n\n    private var bars: some View {\n        HStack(spacing: size * 0.1) {\n            ForEach(0..<4, id: \\.self) { index in\n                Capsule()\n                    .fill(tint)\n                    .frame(width: size * 0.15, height: size * 0.8)\n                    .scaleEffect(y: animating && !reduceMotion ? 1 : 0.32, anchor: .center)\n                    .animation(loop(0.42, delay: Double(index) * 0.1), value: animating)\n            }\n        }\n    }\n}\n\n#Preview(\"SKActivityIndicator\") {\n    VStack(spacing: SK.Space.xxl) {\n        HStack(spacing: SK.Space.xxl) {\n            SKActivityIndicator(style: .dots)\n            SKActivityIndicator(style: .arc)\n            SKActivityIndicator(style: .bars)\n        }\n        HStack(spacing: SK.Space.xl) {\n            SKActivityIndicator(style: .dots, tint: SK.Palette.success, size: 28)\n            SKActivityIndicator(style: .arc, tint: SK.Palette.danger, size: 56)\n        }\n    }\n    .padding(SK.Space.xl)\n    .frame(maxWidth: .infinity, maxHeight: .infinity)\n    .background(SK.Palette.surfaceSunken)\n}\n"
+    }
+  ],
+  "variants": [
+    {
+      "id": "dots",
+      "title": "Dots",
+      "tier": "free"
+    },
+    {
+      "id": "arc",
+      "title": "Arc",
+      "tier": "free"
+    },
+    {
+      "id": "bars",
+      "title": "Bars",
+      "tier": "free"
+    }
+  ],
+  "usage": "SKActivityIndicator()\nSKActivityIndicator(style: .bars, tint: .white)",
+  "docs": "https://theswiftk.it.com/swiftui/progressview",
+  "keywords": [
+    "custom activity indicator swift",
+    "ios activity indicator",
+    "ios loading indicator",
+    "swiftui loading"
+  ],
+  "meta": {
+    "searchVolume": 3360
+  }
+}

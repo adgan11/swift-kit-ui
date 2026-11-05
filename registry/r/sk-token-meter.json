@@ -1,0 +1,49 @@
+{
+  "$schema": "https://theswiftk.it.com/ui/schema/registry-item.json",
+  "name": "sk-token-meter",
+  "type": "registry:component",
+  "title": "Token Meter",
+  "description": "Quota usage that changes colour at 70% and 90%, where the copy changes and the upgrade action appears. A prompt to upgrade at 15% is an advert; the same prompt at 92% is help. The fill glides rather than snapping, so an expensive action is visibly expensive.",
+  "author": "Ahmed Gagan",
+  "tier": "free",
+  "platforms": {
+    "iOS": "17.0",
+    "macOS": "14.0"
+  },
+  "categories": [
+    "ai"
+  ],
+  "dependencies": [],
+  "registryDependencies": [
+    "foundation"
+  ],
+  "files": [
+    {
+      "path": "Sources/SwiftKitUI/Components/SKTokenMeter.swift",
+      "target": "SwiftKitUI/SKTokenMeter.swift",
+      "type": "registry:component",
+      "lines": 200,
+      "content": "//\n//  SKTokenMeter.swift\n//  Swift Kit UI\n//\n//  Requires: SwiftKitUI.swift\n//\n//  Usage against a quota, shown before it becomes a problem.\n//\n//  The bar changes colour at 70% and again at 90%, which is the entire point:\n//  a meter that is the same colour at 20% and 99% is decoration. Those two\n//  thresholds are also where the copy changes and where the upgrade action\n//  appears \u2014 a prompt to upgrade at 15% is an advert, the same prompt at 92%\n//  is help.\n//\n//  The fill animates on `.glide` rather than snapping, because a quota moving\n//  visibly is how someone learns that what they just did was expensive.\n//\n//  Usage:\n//      SKTokenMeter(used: 18_420, limit: 25_000)\n//      SKTokenMeter(used: used, limit: limit, style: .compact, onUpgrade: upgrade)\n//\n\nimport SwiftUI\n\npublic struct SKTokenMeter: View {\n    public enum Style: Sendable { case card, compact }\n\n    private let used: Int\n    private let limit: Int\n    private let unit: String\n    private let style: Style\n    private let onUpgrade: (() -> Void)?\n\n    public init(\n        used: Int,\n        limit: Int,\n        unit: String = \"tokens\",\n        style: Style = .card,\n        onUpgrade: (() -> Void)? = nil\n    ) {\n        self.used = used\n        self.limit = limit\n        self.unit = unit\n        self.style = style\n        self.onUpgrade = onUpgrade\n    }\n\n    private var fraction: Double {\n        guard limit > 0 else { return 0 }\n        return min(1, max(0, Double(used) / Double(limit)))\n    }\n\n    private var tint: Color {\n        switch fraction {\n        case ..<0.7: SK.Palette.accent\n        case ..<0.9: SK.Palette.warning\n        default: SK.Palette.danger\n        }\n    }\n\n    private var remaining: Int { max(0, limit - used) }\n\n    public var body: some View {\n        switch style {\n        case .compact: compact\n        case .card: card\n        }\n    }\n\n    // MARK: Bar\n\n    private var bar: some View {\n        GeometryReader { geo in\n            ZStack(alignment: .leading) {\n                Capsule().fill(SK.Palette.fill)\n                Capsule()\n                    .fill(tint)\n                    .frame(width: max(0, geo.size.width * fraction))\n            }\n        }\n        .frame(height: 6)\n        .skAnimation(.glide, value: fraction)\n        .accessibilityHidden(true)\n    }\n\n    // MARK: Styles\n\n    private var compact: some View {\n        VStack(alignment: .leading, spacing: SK.Space.xs) {\n            HStack(spacing: SK.Space.xs) {\n                Text(\"\\(short(used)) / \\(short(limit))\")\n                    .font(SK.Type_.caption)\n                    .monospacedDigit()\n                    .foregroundStyle(SK.Palette.labelSecondary)\n                Spacer(minLength: 0)\n                Text(\"\\(Int(fraction * 100))%\")\n                    .font(SK.Type_.caption)\n                    .monospacedDigit()\n                    .foregroundStyle(tint)\n            }\n            bar\n        }\n        .accessibilityElement(children: .combine)\n        .accessibilityLabel(\"\\(short(used)) of \\(short(limit)) \\(unit) used\")\n    }\n\n    private var card: some View {\n        VStack(alignment: .leading, spacing: SK.Space.md) {\n            HStack(alignment: .firstTextBaseline, spacing: SK.Space.sm) {\n                Text(short(used))\n                    .font(SK.Type_.title)\n                    .monospacedDigit()\n                    .foregroundStyle(SK.Palette.label)\n                Text(\"of \\(short(limit)) \\(unit)\")\n                    .font(SK.Type_.caption)\n                    .foregroundStyle(SK.Palette.labelTertiary)\n                Spacer(minLength: 0)\n                if fraction >= 0.7 {\n                    Image(systemName: fraction >= 0.9 ? \"exclamationmark.triangle.fill\" : \"clock.fill\")\n                        .font(SK.Icon.symbol(SK.Icon.sm))\n                        .foregroundStyle(tint)\n                        .transition(.scale.combined(with: .opacity))\n                }\n            }\n\n            bar\n\n            HStack(spacing: SK.Space.sm) {\n                Text(message)\n                    .font(SK.Type_.caption)\n                    .foregroundStyle(SK.Palette.labelSecondary)\n                    .fixedSize(horizontal: false, vertical: true)\n\n                Spacer(minLength: 0)\n\n                // Only offered once it is useful. Below 70% this is an advert.\n                if let onUpgrade, fraction >= 0.7 {\n                    Button(\"Upgrade\") {\n                        onUpgrade()\n                        SK.Haptic.play(.light)\n                    }\n                    .font(SK.Type_.caption)\n                    .foregroundStyle(Color.white)\n                    .padding(.horizontal, SK.Space.md)\n                    .padding(.vertical, SK.Space.xs + 1)\n                    .background(tint, in: Capsule())\n                    .buttonStyle(.skPress(scale: 0.94, haptic: nil))\n                    .transition(.scale.combined(with: .opacity))\n                }\n            }\n        }\n        .padding(SK.Space.lg)\n        .background(SK.Palette.surfaceElevated, in: RoundedRectangle(cornerRadius: SK.Radius.lg, style: .continuous))\n        .overlay {\n            RoundedRectangle(cornerRadius: SK.Radius.lg, style: .continuous)\n                .strokeBorder(SK.Palette.separator, lineWidth: SK.Stroke.thin)\n        }\n        .skAnimation(.snap, value: fraction >= 0.7)\n        .accessibilityElement(children: .combine)\n        .accessibilityLabel(\"\\(short(used)) of \\(short(limit)) \\(unit) used. \\(message)\")\n    }\n\n    private var message: String {\n        switch fraction {\n        case ..<0.7: \"\\(short(remaining)) \\(unit) left this month.\"\n        case ..<0.9: \"You are using these faster than usual.\"\n        case ..<1: \"Almost out \u2014 \\(short(remaining)) \\(unit) left.\"\n        default: \"Limit reached. Usage resets on the 1st.\"\n        }\n    }\n\n    /// 18,420 -> \"18.4K\". Long numbers in a tight row push the layout around\n    /// and nobody reads the last three digits of a quota anyway.\n    private func short(_ value: Int) -> String {\n        func trim(_ text: String) -> String {\n            text.hasSuffix(\".0\") ? String(text.dropLast(2)) : text\n        }\n        if value >= 1_000_000 { return trim(String(format: \"%.1f\", Double(value) / 1_000_000)) + \"M\" }\n        if value >= 1_000 { return trim(String(format: \"%.1f\", Double(value) / 1_000)) + \"K\" }\n        return \"\\(value)\"\n    }\n}\n\n#Preview(\"SKTokenMeter\") {\n    @Previewable @State var used = 4_200\n\n    VStack(spacing: SK.Space.lg) {\n        SKTokenMeter(used: used, limit: 25_000, onUpgrade: {})\n        SKTokenMeter(used: used, limit: 25_000, style: .compact)\n\n        Button(\"Spend 6K\") { used = min(25_000, used + 6_000) }\n            .font(SK.Type_.callout)\n            .foregroundStyle(SK.Palette.accent)\n            .buttonStyle(.skPress)\n    }\n    .padding(SK.Space.lg)\n    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)\n    .background(SK.Palette.surface)\n}\n"
+    }
+  ],
+  "variants": [
+    {
+      "id": "card",
+      "title": "Card",
+      "tier": "free"
+    },
+    {
+      "id": "compact",
+      "title": "Compact",
+      "tier": "free"
+    }
+  ],
+  "usage": "SKTokenMeter(used: 18_420, limit: 25_000)\nSKTokenMeter(used: used, limit: limit, style: .compact, onUpgrade: upgrade)",
+  "docs": "https://theswiftk.it.com/swiftui/token-meter",
+  "keywords": [
+    "swiftui usage meter",
+    "swiftui progress bar",
+    "swiftui quota ui",
+    "token usage swiftui"
+  ]
+}

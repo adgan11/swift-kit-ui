@@ -1,0 +1,46 @@
+{
+  "$schema": "https://theswiftk.it.com/ui/schema/registry-item.json",
+  "name": "sk-search-bar",
+  "type": "registry:component",
+  "title": "Search Bar",
+  "description": "Search field with a Cancel button that slides in on focus.",
+  "author": "Ahmed Gagan",
+  "tier": "free",
+  "platforms": {
+    "iOS": "17.0",
+    "macOS": "14.0"
+  },
+  "categories": [
+    "inputs"
+  ],
+  "dependencies": [],
+  "registryDependencies": [
+    "foundation"
+  ],
+  "files": [
+    {
+      "path": "Sources/SwiftKitUI/Components/SKSearchBar.swift",
+      "target": "SwiftKitUI/SKSearchBar.swift",
+      "type": "registry:component",
+      "lines": 110,
+      "content": "//\n//  SKSearchBar.swift\n//  Swift Kit UI\n//\n//  Requires: SwiftKitUI.swift\n//\n//  Search field with a Cancel button that slides in on focus.\n//\n//  Cancel is width-animated rather than inserted, so the field shrinks smoothly\n//  instead of the button popping into existence and shoving it sideways.\n//\n//  Usage:\n//      SKSearchBar(text: $query)\n//      SKSearchBar(text: $query, placeholder: \"Search components\") { submit() }\n//\n\nimport SwiftUI\n\npublic struct SKSearchBar: View {\n    @Binding private var text: String\n    private let placeholder: String\n    private let onSubmit: (() -> Void)?\n\n    @FocusState private var focused: Bool\n    @Environment(\\.accessibilityReduceMotion) private var reduceMotion\n\n    public init(\n        text: Binding<String>,\n        placeholder: String = \"Search\",\n        onSubmit: (() -> Void)? = nil\n    ) {\n        self._text = text\n        self.placeholder = placeholder\n        self.onSubmit = onSubmit\n    }\n\n    public var body: some View {\n        HStack(spacing: SK.Space.sm) {\n            field\n            if focused {\n                Button(\"Cancel\") {\n                    text = \"\"\n                    focused = false\n                    SK.Haptic.play(.light)\n                }\n                .font(SK.Type_.callout)\n                .foregroundStyle(SK.Palette.accent)\n                .transition(.move(edge: .trailing).combined(with: .opacity))\n            }\n        }\n        .skAnimation(.snap, value: focused)\n    }\n\n    private var field: some View {\n        HStack(spacing: SK.Space.sm) {\n            Image(systemName: \"magnifyingglass\")\n                .font(SK.Icon.symbol(SK.Icon.md))\n                .foregroundStyle(focused ? SK.Palette.accent : SK.Palette.labelTertiary)\n\n            TextField(placeholder, text: $text)\n                .font(SK.Type_.body)\n                .foregroundStyle(SK.Palette.label)\n                .focused($focused)\n                .autocorrectionDisabled()\n                .skCapitalization(.never)\n                .submitLabel(.search)\n                .onSubmit { onSubmit?() }\n\n            if !text.isEmpty {\n                Button {\n                    text = \"\"\n                    SK.Haptic.play(.light)\n                } label: {\n                    Image(systemName: \"xmark.circle.fill\")\n                        .font(SK.Icon.symbol(SK.Icon.md))\n                        .foregroundStyle(SK.Palette.labelTertiary)\n                }\n                .buttonStyle(.plain)\n                .transition(.opacity.combined(with: .scale(scale: 0.7)))\n                .accessibilityLabel(\"Clear search\")\n            }\n        }\n        .padding(.horizontal, SK.Space.md)\n        .frame(height: SK.Icon.hitTarget)\n        .background(SK.Palette.fill, in: Capsule(style: .continuous))\n        .overlay {\n            Capsule(style: .continuous)\n                .strokeBorder(SK.Palette.accent, lineWidth: focused ? SK.Stroke.thick : 0)\n        }\n        .contentShape(.capsule)\n        .onTapGesture { focused = true }\n    }\n}\n\n#Preview(\"SKSearchBar\") {\n    @Previewable @State var query = \"\"\n    @Previewable @State var filled = \"swiftui toggle\"\n\n    VStack(spacing: SK.Space.xl) {\n        SKSearchBar(text: $query)\n        SKSearchBar(text: $filled, placeholder: \"Search components\")\n        Text(\"Tap a field to see Cancel slide in\")\n            .font(SK.Type_.caption)\n            .foregroundStyle(SK.Palette.labelTertiary)\n    }\n    .padding(SK.Space.xl)\n    .frame(maxWidth: .infinity, maxHeight: .infinity)\n    .background(SK.Palette.surfaceSunken)\n}\n"
+    }
+  ],
+  "variants": [
+    {
+      "id": "default",
+      "title": "Default",
+      "tier": "free"
+    }
+  ],
+  "usage": "SKSearchBar(text: $query)\nSKSearchBar(text: $query, placeholder: \"Search components\") { submit() }",
+  "docs": "https://theswiftk.it.com/swiftui/search-bar",
+  "keywords": [
+    "ios search bar",
+    "swiftui search bar",
+    "swiftui searchable"
+  ],
+  "meta": {
+    "searchVolume": 210
+  }
+}
